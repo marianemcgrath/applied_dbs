@@ -96,6 +96,48 @@ def main():
         elif choice == "x":
             print("Goodbye!")
             break
+        elif choice == "3":
+            add_new_attendee()
+
+def add_new_attendee():
+    print("\nAdd New Attendee")
+    print("----------------")
+    
+    attendee_id = input("Attendee ID : ")
+    name = input("Name : ")
+    dob = input("DOB : ")
+    gender = input("Gender : ")
+    company_id = input("Company ID : ")
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Check gender is valid
+    if gender not in ("Male", "Female"):
+        print("*** ERROR *** Gender must be Male/Female")
+        conn.close()
+        return
+    
+    # Check company exists
+    cursor.execute("SELECT companyID FROM company WHERE companyID = %s", (company_id,))
+    if not cursor.fetchone():
+        print(f"*** ERROR *** Company ID: {company_id} does not exist")
+        conn.close()
+        return
+    
+    # Insert attendee
+    try:
+        query = """
+            INSERT INTO attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (attendee_id, name, dob, gender, company_id))
+        conn.commit()
+        print("Attendee successfully added")
+    except Exception as e:
+        print(f"*** ERROR *** {e}")
+    
+    conn.close()
 
 if __name__ == "__main__":
     main()
