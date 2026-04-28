@@ -1,5 +1,3 @@
-import 
-
 MATCH (n) DETACH DELETE n;
 
 CREATE

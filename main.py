@@ -155,7 +155,7 @@ def view_connected_attendees():
  
         # Check Neo4j for connections
         driver = get_neo4j_driver()
-        with driver.session(database="attendeeNetwork") as session:
+        with driver.session(database="appdbprojNeo4j") as session:
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO]-(b:Attendee)
@@ -214,7 +214,7 @@ def add_attendee_connection():
  
         # Check if already connected in Neo4j (either direction)
         driver = get_neo4j_driver()
-        with driver.session(database="attendeecompany") as session:
+        with driver.session(database="appdbprojNeo4j") as session:
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id1})-[:CONNECTED_TO]-(b:Attendee {AttendeeID: $id2})
@@ -234,7 +234,7 @@ def add_attendee_connection():
                 """
                 MERGE (a:Attendee {AttendeeID: $id1})
                 MERGE (b:Attendee {AttendeeID: $id2})
-                CREATE (a)-[:CONNECTED_TO]->(b)
+                MERGE (a)-[:CONNECTED_TO]->(b) 
                 """,
                 id1=id1, id2=id2
             )

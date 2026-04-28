@@ -1,0 +1,9 @@
+What is my innovation feature? 
+
+I have decided to add to the conference database the feature that supports one of the main purposes of conferences: networking.
+
+Professional relationships often grow through shared interests and mutual contacts, so I proposed a NETWORKING menu that recommends
+connections through the friend-of-a-friend who are not directly connected, by up to 4 levels.
+
+Using Neo4j graph relationships, this innovation acts as a simple recommendation engine, and it shows how the database can be used
+to store connections, as well as generate meaningful networking opportunities for conference attendees.
