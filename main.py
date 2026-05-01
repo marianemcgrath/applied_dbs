@@ -1,12 +1,15 @@
 # Applied Databases Project
 # Author: Mariane McGrath
- 
+
 from db_connection import get_connection
 from neo4j_connection import get_neo4j_driver
- 
+
+# INNOVATION FEATURE - import networking function from dao.py
+from dao import networking
+
 # Cache for rooms (loaded once per session - option 6 requirement)
 _rooms_cache = None
- 
+
 def view_speakers_and_sessions():
     search = input("Enter speaker name : ")
     print(f"Session Details For :  {search}")
@@ -31,8 +34,8 @@ def view_speakers_and_sessions():
         print("No speakers found of that name")
     
     conn.close()
- 
- 
+
+
 def view_attendees_by_company():
     while True:
         company_id = input("Enter Company ID : ")
@@ -75,8 +78,8 @@ def view_attendees_by_company():
         
         conn.close()
         break
- 
- 
+
+
 def add_new_attendee():
     print("\nAdd New Attendee")
     print("----------------")
@@ -105,7 +108,7 @@ def add_new_attendee():
             return
     except Exception:
         pass  # Let the INSERT catch the type error below
- 
+
     # Check company exists
     cursor.execute("SELECT companyID FROM company WHERE companyID = %s", (company_id,))
     if not cursor.fetchone():
@@ -126,33 +129,33 @@ def add_new_attendee():
         print(f"*** ERROR *** {e}")
     
     conn.close()
- 
- 
+
+
 def view_connected_attendees():
     while True:
         attendee_input = input("Enter Attendee ID : ")
- 
+
         if not attendee_input.isdigit():
             print("*** ERROR *** Invalid attendee ID")
             continue
- 
+
         attendee_id = int(attendee_input)
- 
+
         # Check MySQL first
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (attendee_id,))
         mysql_row = cursor.fetchone()
         conn.close()
- 
+
         if not mysql_row:
             print("*** ERROR *** Attendee does not exist")
             continue
- 
+
         attendee_name = mysql_row[0]
         print(f"Attendee Name:  {attendee_name}")
         print("--------------------")
- 
+
         # Check Neo4j for connections
         driver = get_neo4j_driver()
         with driver.session(database="appdbprojNeo4j") as session:
@@ -165,7 +168,7 @@ def view_connected_attendees():
             )
             connected_ids = [record["connectedID"] for record in result]
         driver.close()
- 
+
         if not connected_ids:
             print("No connections")
         else:
@@ -179,39 +182,39 @@ def view_connected_attendees():
                 name = row[0] if row else "Unknown"
                 print(f"{cid}  |  {name}")
             conn.close()
- 
+
         break
- 
- 
+
+
 def add_attendee_connection():
     while True:
         id1_input = input("Enter Attendee 1 ID : ")
         id2_input = input("Enter Attendee 2 ID : ")
- 
+
         # Validate both are numeric
         if not id1_input.isdigit() or not id2_input.isdigit():
             print("*** ERROR *** Attendee IDs must be numbers")
             continue
- 
+
         id1 = int(id1_input)
         id2 = int(id2_input)
- 
+
         # Cannot connect to self
         if id1 == id2:
             print("*** ERROR *** An attendee cannot connect to him/herself")
             continue
- 
+
         # Check both exist in MySQL
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT attendeeID FROM attendee WHERE attendeeID IN (%s, %s)", (id1, id2))
         found = [row[0] for row in cursor.fetchall()]
         conn.close()
- 
+
         if id1 not in found or id2 not in found:
             print("*** ERROR *** One or both attendee IDs do not exist")
             continue
- 
+
         # Check if already connected in Neo4j (either direction)
         driver = get_neo4j_driver()
         with driver.session(database="appdbprojNeo4j") as session:
@@ -223,12 +226,12 @@ def add_attendee_connection():
                 id1=id1, id2=id2
             )
             already_connected = result.single()["cnt"] > 0
- 
+
             if already_connected:
                 print("*** ERROR *** These attendees are already connected")
                 driver.close()
                 continue
- 
+
             # Create nodes if they don't exist, then create relationship
             session.run(
                 """
@@ -238,27 +241,27 @@ def add_attendee_connection():
                 """,
                 id1=id1, id2=id2
             )
- 
+
         driver.close()
         print(f"Attendee {id1} is now connected to Attendee {id2}")
         break
- 
- 
+
+
 def view_rooms():
     global _rooms_cache
- 
+
     if _rooms_cache is None:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT roomID, roomName, capacity FROM room")
         _rooms_cache = cursor.fetchall()
         conn.close()
- 
+
     print(f"{'RoomID':<8} | {'RoomName':<20} | Capacity")
     for row in _rooms_cache:
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
- 
- 
+
+
 def main():
     while True:
         print("\nConference Management")
@@ -271,10 +274,11 @@ def main():
         print("4 - View Connected Attendees")
         print("5 - Add Attendee Connection")
         print("6 - View Rooms")
+        print("7 - Networking")          # INNOVATION FEATURE
         print("x - Exit application")
         
         choice = input("Choice: ")
- 
+
         if choice == "1":
             view_speakers_and_sessions()
         elif choice == "2":
@@ -287,11 +291,13 @@ def main():
             add_attendee_connection()
         elif choice == "6":
             view_rooms()
+        elif choice == "7":
+            networking()               # INNOVATION FEATURE
         elif choice == "x":
             print("Goodbye!")
             break
         # Anything else will loop back and show the menu again
- 
- 
+
+
 if __name__ == "__main__":
     main()

@@ -1,9 +1,24 @@
 What is my innovation feature? 
 
-I have decided to add to the conference database the feature that supports one of the main purposes of conferences: networking.
+Considering my background in marketing and communications,I have decided to add to the conference database the feature that supports
+one of the main purposes of conferences: NETWORKING .
 
-Professional relationships often grow through shared interests and mutual contacts, so I proposed a NETWORKING menu that recommends
+Professional relationships often grow through shared interests and mutual contacts, so I proposed a networking menu that recommends
 connections through the friend-of-a-friend who are not directly connected, by up to 4 levels.
 
 Using Neo4j graph relationships, this innovation acts as a simple recommendation engine, and it shows how the database can be used
 to store connections, as well as generate meaningful networking opportunities for conference attendees.
+
+How the Suggested Connections Feature Works
+
+1. The user selects the Suggested Connections menu option and enters an attendee ID.
+2. The system queries the Neo4j database to find the attendee’s direct connections.
+3. It, then, searches for friends-of-friends (second-degree connections) linked through those direct connections.
+4. Existing direct connections and the attendee themselves are excluded, so only new potential connections are suggested.
+5. Suggested attendees are returned as networking recommendations, optionally ranked by number of mutual connections.
+6. A Neo4j graph visualisation can also be used to display the attendee’s network and highlight suggested new connections.
+
+This is implemented using Neo4j graph traversal, matching mutual connections and filtering out attendees already connected.
+
+
+Source: https://neo4j.com/docs/java-reference/current/java-embedded/traversal/
