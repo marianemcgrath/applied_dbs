@@ -30,7 +30,69 @@ Suggestions can also be ranked based on the number of mutual connections. A Neo4
 
 3. Technical Implementation
 
-This feature is implemented using Neo4j and follows best practices in application design.
+The Suggested Connections feature is implemented using a combination of Neo4j graph traversal and MySQL relational queries, allowing the system to efficiently model and retrieve complex relationships between attendees.
+
+Graph-Based Relationship Modelling (Neo4j)
+
+Attendee connections are represented in Neo4j using CONNECTED_TO relationships. This graph structure enables efficient traversal of indirect relationships (e.g. friend-of-a-friend), which would be significantly more complex to implement using a purely relational database.
+
+To generate recommendations, the system performs a bounded traversal using Neo4j’s pathfinding capabilities. Specifically, a shortestPath() query (or variable-length relationship pattern) is used to identify attendees within a configurable depth (2 to 4 degrees of separation).
+
+This approach ensures:
+
+ * Efficient querying of multi-level relationships
+ * Avoidance of unnecessary traversal beyond the specified depth
+ * Accurate calculation of degree of separation for each suggested attendee
+
+
+Filtering Logic
+
+To maintain relevance and avoid redundant recommendations, the query includes filtering conditions to:
+
+ * Exclude the selected attendee
+ * Exclude all direct connections (degree = 1)
+ * Return only new, indirect connections (degree ≥ 2)
+
+This ensures that all results represent meaningful networking opportunities rather than existing relationships.
+
+Data Enrichment (Neo4j + MySQL Integration)
+
+While Neo4j is used to identify relationships, attendee details (such as names and company information) are stored in MySQL.
+
+After retrieving a list of suggested attendee IDs from Neo4j, the system performs a JOIN query in MySQL to enrich the results with human-readable data. This separation of concerns allows:
+
+ * Neo4j to specialise in relationship traversal
+ * MySQL to manage structured attendee and company data
+
+This hybrid approach improves both performance and clarity of the data model.
+
+-----------------
+
+DAO Pattern and Code Structure
+
+The feature is implemented in a dedicated dao.py file using the Data Access Object (DAO) pattern, which separates database logic from the main application flow.
+
+This design provides several advantages:
+
+ * Improves maintainability by isolating query logic
+ * Makes the codebase easier to test and extend
+ * Allows database queries to be reused across different parts of the application
+
+For example, the method responsible for retrieving suggested connections:
+
+ * Accepts an attendee ID and degree limit
+ * Executes the Neo4j traversal query
+ * Applies filtering rules
+ * Returns a clean list of recommended attendee IDs
+ * Scalability and Design Considerations
+
+Using a graph database for this feature provides a scalable solution for handling increasingly complex networks. As the number of attendees and connections grows, graph traversal remains efficient compared to recursive joins in relational systems.
+
+Additionally, limiting traversal depth (2–4 levels) ensures:
+
+ * Controlled query performance
+ * Relevant and meaningful recommendations
+ * Prevention of overly distant or irrelevant connections
 
 
 4. Packages Required
