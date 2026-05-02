@@ -43,7 +43,7 @@ def networking():
         print("--------------------")
         break
 
-    # Step 2: Get and validate degree of separation (2-4)
+    # Step 2: Get and validate degree of separation (2-4) ---
     while True:
         degree_input = input("Show suggested connections up to how many degrees away? (2-4) : ")
 
@@ -58,3 +58,53 @@ def networking():
             continue
 
         break
+
+    # Step 3: Query Neo4j for suggested connections ---
+    driver = get_neo4j_driver()
+    suggestions = []
+
+    with driver.session(database="appdbprojNeo4j") as session:
+        result = session.run(
+            """
+            MATCH path = shortestPath(
+                (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO*2..$max_deg]-(suggested:Attendee)
+            )
+            WHERE NOT (a)-[:CONNECTED_TO]-(suggested)
+            AND suggested.AttendeeID <> $id
+            RETURN suggested.AttendeeID AS suggestedID, length(path) AS degrees
+            ORDER BY degrees, suggested.AttendeeID
+            """,
+            id=attendee_id,
+            max_deg=max_degree
+        )
+        suggestions = [(record["suggestedID"], record["degrees"]) for record in result]
+
+    driver.close()
+
+    # Step 4: Display results ---
+    print(f"\nSuggested Connections (up to {max_degree} degrees away)")
+    print("--------------------------------------------------")
+
+    if not suggestions:
+        print(f"No networking suggestions found within {max_degree} degrees.")
+        return
+
+    # Look up names from MySQL for each suggested attendee
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    for (suggested_id, degrees) in suggestions:
+        cursor.execute("""
+            SELECT a.attendeeName, c.companyName
+            FROM attendee a
+            JOIN company c ON a.attendeeCompanyID = c.companyID
+            WHERE a.attendeeID = %s
+        """, (suggested_id,))
+        row = cursor.fetchone()
+        name = row[0] if row else "Unknown"
+        company = row[1] if row else "Unknown"
+        degree_label = f"{degrees} degree{'s' if degrees > 1 else ''} away"
+        print(f"{degree_label:<20} | {suggested_id:<6} | {name:<20} | {company}")
+ 
+    conn.close()
+    

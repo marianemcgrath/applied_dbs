@@ -1,4 +1,4 @@
-What is my innovation feature? 
+1. Rationale
 
 Considering my background in marketing and communications,I have decided to add to the conference database the feature that supports
 one of the main purposes of conferences: NETWORKING .
@@ -9,16 +9,40 @@ connections through the friend-of-a-friend who are not directly connected, by up
 Using Neo4j graph relationships, this innovation acts as a simple recommendation engine, and it shows how the database can be used
 to store connections, as well as generate meaningful networking opportunities for conference attendees.
 
-How the Suggested Connections Feature Works
 
-1. The user selects the Suggested Connections menu option and enters an attendee ID.
-2. The system queries the Neo4j database to find the attendee’s direct connections.
-3. It, then, searches for friends-of-friends (second-degree connections) linked through those direct connections.
-4. Existing direct connections and the attendee themselves are excluded, so only new potential connections are suggested.
-5. Suggested attendees are returned as networking recommendations, optionally ranked by number of mutual connections.
-6. A Neo4j graph visualisation can also be used to display the attendee’s network and highlight suggested new connections.
+2. How It Works
 
-This is implemented using Neo4j graph traversal, matching mutual connections and filtering out attendees already connected.
+When the user selects the Networking option (Option 7) from the main menu, they are prompted to:
+
+2.1 Enter an attendee ID
+2.2 Choose the degree of separation to search (between 2 and 4)
+
+The system then performs a graph traversal on the Neo4j database to identify attendees within the selected number of connections. Direct connections and the attendee themselves are excluded to ensure only new networking opportunities are suggested.
+
+The results display:
+
+ * Suggested attendees
+ * Degree of separation
+ * Additional attendee details retrieved from the MySQL database
+
+Suggestions can also be ranked based on the number of mutual connections. A Neo4j graph visualisation can be used to display the attendee’s network and highlight recommended connections.
 
 
-Source: https://neo4j.com/docs/java-reference/current/java-embedded/traversal/
+3. Technical Implementation
+
+This feature is implemented using Neo4j and follows best practices in application design.
+
+
+4. Packages Required
+
+No additional packages are required beyond those already used in the project. All dependencies can be installed with:
+
+pip install neo4j mysql-connector-python python-dotenv
+
+
+5. Testing on the VM
+
+Step 1 — Run the application
+Step 2 — Select option 7 (Networking)
+Step 3 — Enter test values [add a few test options/ visuals]
+Step 4 — Verify in Neo4j Browser
