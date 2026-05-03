@@ -6,12 +6,14 @@ Author: Mariane McGrath
 
 ✨ Overview
 
-This is a conference management system that integrates relational and graph databases to manage attendees, companies, and professional connections.
+✨ Overview
+
+This application is a conference management system that integrates both relational and graph databases to manage attendees, companies, and professional connections.
 
  - MySQL → structured data (attendees, companies)
  - Neo4j → relationships between attendees
 
-A key feature of the system is a networking tool that recommends new professional connections.
+A key feature of the system is a networking tool that actively recommends new professional connections.
 
 🤝 Innovation Feature - Suggested Connections (Social Network)
 
@@ -25,7 +27,7 @@ Features:
  * Displays degree of separation
  * Enriches results with attendee and company data
 
-This transforms the system into a simple recommendation engine for networking.
+This transforms the system from a static database into a recommendation engine for networking.
 
 🛠 Tech Stack
  - Python
@@ -50,6 +52,8 @@ python main.py
 
 🔍 Verify in Neo4j Browser
 
+Run the following query to visualise relationships:
+
 MATCH (a:Attendee {AttendeeID: 101})-[:CONNECTED_TO*1..3]-(b:Attendee)
 RETURN a, b
 
@@ -61,10 +65,10 @@ dao.py         # Database logic (DAO pattern)
 
 🧠 Design Choices
 
- * Graph database for relationship traversal
- * Relational database for structured data
- * DAO pattern for separation of concerns
- * Hybrid database approach for efficiency
+ * A graph database is used for efficient relationship traversal
+ * A relational database is used for structured data storage
+ * The DAO pattern separates database logic from application logic
+ * A hybrid database approach improves both performance and clarity
 
 ⚠️ Notes
 

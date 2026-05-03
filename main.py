@@ -274,7 +274,7 @@ def main():
         print("4 - View Connected Attendees")
         print("5 - Add Attendee Connection")
         print("6 - View Rooms")
-        print("7 - Networking")          # INNOVATION FEATURE
+        print("7 - People you should meet")  # INNOVATION FEATURE
         print("x - Exit application")
         
         choice = input("Choice: ")

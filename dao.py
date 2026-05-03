@@ -1,23 +1,20 @@
 # Data Access Object - Database query functions
 # Author: Mariane McGrath
 #
-# NOTE: This file contains the INNOVATION FEATURE - Networking (Suggested Connections)
-# The networking() function implements a friend-of-a-friend recommendation engine
-# using Neo4j graph traversal up to 4 degrees of separation.
+# INNOVATION FEATURE - Suggested Connections
+#
+# This feature implements a recommendation system using Neo4j.
+# It identifies second-degree connections (friends-of-friends) by traversing the graph and excluding already connected attendees.
+
+# Suggested attendees are ranked based on the number of mutual connections they share with the user. 
+
+# MySQL is used to retrieve attendee names for display.
 
 from db_connection import get_connection
 from neo4j_connection import get_neo4j_driver
 
-# INNOVATION FEATURE - Networking (Suggested Connections)
+def suggest_connections():
 
-# Uses Neo4j shortestPath to find attendees within N degrees of separation
-# who are not already directly connected to the given attendee.
-# The user can filter results by choosing how many degrees away to search (2-4).
-# Names are looked up from MySQL to enrich the Neo4j results.
-
-
-def networking():
-    # --- Step 1: Get and validate attendee ID ---
     while True:
         attendee_input = input("Enter Attendee ID : ")
 
@@ -27,93 +24,71 @@ def networking():
 
         attendee_id = int(attendee_input)
 
-        # Check attendee exists in MySQL
+        # Check attendee exists
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (attendee_id,))
-        mysql_row = cursor.fetchone()
+        cursor.execute(
+            "SELECT attendeeName FROM attendee WHERE attendeeID = %s",
+            (attendee_id,)
+        )
+        row = cursor.fetchone()
         conn.close()
 
-        if not mysql_row:
+        if not row:
             print("*** ERROR *** Attendee does not exist")
             continue
 
-        attendee_name = mysql_row[0]
-        print(f"Attendee Name:  {attendee_name}")
-        print("--------------------")
-        break
+        attendee_name = row[0]
 
-    # Step 2: Get and validate degree of separation (2-4) ---
-    while True:
-        degree_input = input("Show suggested connections up to how many degrees away? (2-4) : ")
+        print(f"\nSuggested connections for {attendee_name}")
+        print("(Based on shared connections in the network)")
+        print("--------------------------------------------------")
 
-        if not degree_input.isdigit():
-            print("*** ERROR *** Please enter a number between 2 and 4")
-            continue
+        driver = get_neo4j_driver()
 
-        max_degree = int(degree_input)
-
-        if max_degree < 2 or max_degree > 4:
-            print("*** ERROR *** Degree must be between 2 and 4")
-            continue
-
-        break
-
-    # Step 3: Query Neo4j for suggested connections ---
-    driver = get_neo4j_driver()
-    suggestions = []
-
-    with driver.session(database="appdbprojNeo4j") as session:
-        result = session.run(
-            """
-            MATCH path = shortestPath(
-                (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO*2..$max_deg]-(suggested:Attendee)
+        with driver.session(database="appdbprojNeo4j") as session:
+            result = session.run(
+                """
+                MATCH (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)
+                WHERE NOT (a)-[:CONNECTED_TO]-(suggested)
+                AND a <> suggested
+                RETURN suggested.AttendeeID AS id, count(mutual) AS score
+                ORDER BY score DESC
+                LIMIT 5
+                """,
+                id=attendee_id
             )
-            WHERE NOT (a)-[:CONNECTED_TO]-(suggested)
-            AND suggested.AttendeeID <> $id
-            RETURN suggested.AttendeeID AS suggestedID, length(path) AS degrees
-            ORDER BY degrees, suggested.AttendeeID
-            """,
-            id=attendee_id,
-            max_deg=max_degree
+
+            suggestions = list(result)
+
+        driver.close()
+
+        if not suggestions:
+            print("No suggestions available (no second-degree connections found)")
+            break
+
+        # Fetch names in one query
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        ids = [s["id"] for s in suggestions]
+        placeholders = ",".join(["%s"] * len(ids))
+
+        cursor.execute(
+            f"SELECT attendeeID, attendeeName FROM attendee WHERE attendeeID IN ({placeholders})",
+            tuple(ids)
         )
-        suggestions = [(record["suggestedID"], record["degrees"]) for record in result]
 
-    driver.close()
+        name_map = dict(cursor.fetchall())
+        conn.close()
 
-    # Step 4: Display results ---
-    print(f"\nSuggested Connections (up to {max_degree} degrees away)")
-    print("--------------------------------------------------")
+        # Clean formatted output
+        print(f"{'ID':<6} | {'Name':<20} | Mutual Connections")
+        print("--------------------------------------------------")
 
-    if not suggestions:
-        print(f"No networking suggestions found within {max_degree} degrees.")
-        return
+        for s in suggestions:
+            name = name_map.get(s["id"], "Unknown")
+            print(f"{s['id']:<6} | {name:<20} | {s['score']}")
 
-    # Look up names from MySQL for each suggested attendee
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    for (suggested_id, degrees) in suggestions:
-        cursor.execute("""
-        SELECT a.attendeeName, c.companyName, s.sessionTitle
-        FROM attendee a
-        JOIN company c ON a.attendeeCompanyID = c.companyID
-        LEFT JOIN registration r ON a.attendeeID = r.attendeeID
-        LEFT JOIN session s ON r.sessionID = s.sessionID
-        WHERE a.attendeeID = %s
-    """, (suggested_id,))
-    rows = cursor.fetchall()
-
-    name = rows[0][0] if rows else "Unknown"
-    company = rows[0][1] if rows else "Unknown"
-    degree_label = f"{degrees} degree{'s' if degrees > 1 else ''} away"
-    print(f"{degree_label:<20} | {suggested_id:<6} | {name:<20} | {company}")
-
-    if rows and rows[0][2]:
-        for row in rows:
-            print(f"{'':20}   {'':6}   Sessions: {row[2]}")
-    else:
-        print(f"{'':20}   {'':6}   No sessions recorded")
- 
-    conn.close()
-    
+        print("\nTip: These people share mutual connections with you — ideal for networking.")
+        break
