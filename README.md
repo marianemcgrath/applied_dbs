@@ -1,11 +1,12 @@
-Applied Databases Project
-
 # Applied Databases Project 2026 — Conference Management System
+
 This project was completed for the Applied Databases module as part of the HDip Data Analytics course at ATU. 
-Mariane McGrath
+
+Author: Mariane McGrath
+
 ✨ Overview
 
-This project is a conference management system that integrates relational and graph databases to manage attendees, companies, and professional connections.
+This is a conference management system that integrates relational and graph databases to manage attendees, companies, and professional connections.
 
  - MySQL → structured data (attendees, companies)
  - Neo4j → relationships between attendees

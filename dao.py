@@ -95,16 +95,25 @@ def networking():
 
     for (suggested_id, degrees) in suggestions:
         cursor.execute("""
-            SELECT a.attendeeName, c.companyName
-            FROM attendee a
-            JOIN company c ON a.attendeeCompanyID = c.companyID
-            WHERE a.attendeeID = %s
-        """, (suggested_id,))
-        row = cursor.fetchone()
-        name = row[0] if row else "Unknown"
-        company = row[1] if row else "Unknown"
-        degree_label = f"{degrees} degree{'s' if degrees > 1 else ''} away"
-        print(f"{degree_label:<20} | {suggested_id:<6} | {name:<20} | {company}")
+        SELECT a.attendeeName, c.companyName, s.sessionTitle
+        FROM attendee a
+        JOIN company c ON a.attendeeCompanyID = c.companyID
+        LEFT JOIN registration r ON a.attendeeID = r.attendeeID
+        LEFT JOIN session s ON r.sessionID = s.sessionID
+        WHERE a.attendeeID = %s
+    """, (suggested_id,))
+    rows = cursor.fetchall()
+
+    name = rows[0][0] if rows else "Unknown"
+    company = rows[0][1] if rows else "Unknown"
+    degree_label = f"{degrees} degree{'s' if degrees > 1 else ''} away"
+    print(f"{degree_label:<20} | {suggested_id:<6} | {name:<20} | {company}")
+
+    if rows and rows[0][2]:
+        for row in rows:
+            print(f"{'':20}   {'':6}   Sessions: {row[2]}")
+    else:
+        print(f"{'':20}   {'':6}   No sessions recorded")
  
     conn.close()
     
