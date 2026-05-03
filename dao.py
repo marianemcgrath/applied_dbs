@@ -44,9 +44,10 @@ def suggest_connections():
         print("(Based on shared connections in the network)")
         print("--------------------------------------------------")
 
+        # --- Neo4j query ---
         driver = get_neo4j_driver()
 
-        with driver.session(database="appdbprojNeo4j") as session:
+        with driver.session() as session:
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)
@@ -67,28 +68,66 @@ def suggest_connections():
             print("No suggestions available (no second-degree connections found)")
             break
 
-        # Fetch names in one query
+        # --- MySQL enrichment ---
         conn = get_connection()
         cursor = conn.cursor()
 
         ids = [s["id"] for s in suggestions]
-        placeholders = ",".join(["%s"] * len(ids))
+        format_strings = ",".join(["%s"] * len(ids))
 
-        cursor.execute(
-            f"SELECT attendeeID, attendeeName FROM attendee WHERE attendeeID IN ({placeholders})",
-            tuple(ids)
-        )
+        cursor.execute(f"""
+            SELECT 
+                a.attendeeID,
+                a.attendeeName,
+                c.companyName,
+                s.sessionTitle
+            FROM attendee a
+            JOIN company c ON a.attendeeCompanyID = c.companyID
+            LEFT JOIN registration r ON a.attendeeID = r.attendeeID
+            LEFT JOIN session s ON r.sessionID = s.sessionID
+            WHERE a.attendeeID IN ({format_strings})
+        """, tuple(ids))
 
-        name_map = dict(cursor.fetchall())
+        rows = cursor.fetchall()
         conn.close()
 
-        # Clean formatted output
-        print(f"{'ID':<6} | {'Name':<20} | Mutual Connections")
+        # --- Organise data ---
+        data_map = {}
+
+        for attendeeID, name, company, session in rows:
+            if attendeeID not in data_map:
+                data_map[attendeeID] = {
+                    "name": name,
+                    "company": company,
+                    "sessions": []
+                }
+
+            if session:
+                data_map[attendeeID]["sessions"].append(session)
+
+        # --- Output ---
         print("--------------------------------------------------")
 
+        rank = 1
         for s in suggestions:
-            name = name_map.get(s["id"], "Unknown")
-            print(f"{s['id']:<6} | {name:<20} | {s['score']}")
+            sid = s["id"]
+            score = s["score"]
 
-        print("\nTip: These people share mutual connections with you — ideal for networking.")
+            person = data_map.get(sid, {})
+            name = person.get("name", "Unknown")
+            company = person.get("company", "Unknown")
+            sessions = person.get("sessions", [])
+
+            print(f"{rank} | {name:<20} | {score} mutual connection(s)")
+            print(f"    Company: {company}")
+
+            if sessions:
+                print(f"    Sessions: {', '.join(sessions)}")
+            else:
+                print("    Sessions: None recorded")
+
+            print()
+            rank += 1
+
+        print("Tip: These people share mutual connections with you — ideal for networking.")
         break

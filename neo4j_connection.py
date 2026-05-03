@@ -1,11 +1,14 @@
-from neo4j import GraphDatabase
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from neo4j import GraphDatabase
 
 load_dotenv()
 
 def get_neo4j_driver():
     return GraphDatabase.driver(
         os.getenv("NEO4J_URI"),
-        auth=("neo4j", os.getenv("NEO4J_PASSWORD"))
+        auth=(
+            os.getenv("NEO4J_USER"),
+            os.getenv("NEO4J_PASSWORD")
+        )
     )
