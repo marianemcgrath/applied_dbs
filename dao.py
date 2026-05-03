@@ -217,7 +217,7 @@ def suggest_connections():
                 s.sessionTitle
             FROM attendee a
             JOIN company c ON a.attendeeCompanyID = c.companyID
-            LEFT JOIN attendee_session r ON a.attendeeID = r.attendeeID
+            LEFT JOIN registration r ON a.attendeeID = r.attendeeID
             LEFT JOIN session s ON r.sessionID = s.sessionID
             WHERE a.attendeeID IN ({format_strings})
         """, tuple(ids))
