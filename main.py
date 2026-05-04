@@ -111,11 +111,15 @@ def add_new_attendee():
         print("*** ERROR *** Invalid DOB")
         conn.close()
         return
-    
+
+    # Validate gender first
     if gender not in ("M", "F"):
         print("*** ERROR *** Gender must be M/F")
         conn.close()
         return
+
+    # Convert to full value for database
+    gender_db = "Male" if gender == "M" else "Female"
     
     cursor.execute("SELECT attendeeID FROM attendee WHERE attendeeID = %s", (attendee_id,))
     if cursor.fetchone():
@@ -134,7 +138,7 @@ def add_new_attendee():
             INSERT INTO attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
             VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (attendee_id, name, dob, gender, company_id))
+        cursor.execute(query, (attendee_id, name, dob, gender_db, company_id))
         conn.commit()
         print("Attendee successfully added")
     except Exception as e:
@@ -164,7 +168,7 @@ def view_connected_attendees():
             continue
         
         attendee_name = mysql_row[0]
-        print(f"Attendee Name: {attendee_name}")
+        print(f"{attendee_id}  |  {attendee_name}")  # ID and name
         print("--------------------")
         
         driver = get_neo4j_driver()
@@ -272,6 +276,7 @@ def view_rooms():
     
     print(f"{'RoomID':<8} | {'RoomName':<20} | Capacity")
     print("-" * 45)
+    
     for row in _rooms_cache:
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
 
