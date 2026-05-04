@@ -1,17 +1,23 @@
 # Data Access Object - Database query functions
 # Author: Mariane McGrath
 #
-# INNOVATION FEATURE - Suggested Connections
+# INNOVATION FEATURE - Networking Intelligence Tool
 #
-# This feature implements a recommendation system using Neo4j.
-# It identifies second-degree connections (friends-of-friends) by traversing the graph and excluding already connected attendees.
-
-# Suggested attendees are ranked based on the number of mutual connections they share with the user. 
-
-# MySQL is used to retrieve attendee names for display.
+# suggest_connections():
+#   Implements a recommendation system using Neo4j.
+#   Identifies second-to-fourth degree connections by traversing the graph,
+#   excluding already connected attendees.
+#   Suggestions are ranked by number of mutual connections.
+#   MySQL is used to retrieve attendee names and session data for display.
+#
+# key_connectors():
+#   Ranks all attendees by number of connections in the Neo4j graph.
+#   Identifies the most networked attendees at the conference.
+#   Useful for seating plans, panel selection, and facilitated introductions.
 
 from db_connection import get_connection
 from neo4j_connection import get_neo4j_driver
+
 
 def suggest_connections():
 
@@ -24,7 +30,7 @@ def suggest_connections():
 
         attendee_id = int(attendee_input)
 
-        # --- Check attendee exists (MySQL) ---
+        # Check attendee exists (MySQL) before querying Neo4j
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -44,10 +50,10 @@ def suggest_connections():
         print("(Based on shared connections in the network)")
         print("--------------------------------------------------")
 
-        # Neo4j query to find second-degree connections and count mutual connections
+        # Neo4j query to find second- to fourth-degree connections and count mutual connections
         driver = get_neo4j_driver()
 
-        with driver.session() as session:
+        with driver.session(database="appdbprojNeo4j") as session:
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id})
@@ -58,7 +64,7 @@ def suggest_connections():
 
                 WITH suggested, MIN(length(path)) AS degrees
 
-                MATCH (a)-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)
+                OPTIONAL MATCH (a)-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)
 
                 RETURN 
                     suggested.AttendeeID AS id,
@@ -76,10 +82,10 @@ def suggest_connections():
         driver.close()
 
         if not suggestions:
-            print("No suggestions available (no second-degree connections found)")
+            print("No suggestions available (no suitable connections found within 2–4 degrees)")
             break
 
-        # MySQL query to get names and companies for suggested attendees
+        # MySQL query to get names, companies and sessions for suggested attendees
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -116,8 +122,7 @@ def suggest_connections():
             if session and session not in data_map[attendeeID]["sessions"]:
                 data_map[attendeeID]["sessions"].append(session)
 
-        # Output the suggestions with mutual connection counts and additional info
-        
+        # Output suggestions with mutual connection counts and enriched info
         print("Rank | Name                 | Mutual | Degree")
         print("--------------------------------------------------")
 
@@ -143,5 +148,69 @@ def suggest_connections():
             print()
             rank += 1
 
-        print("Tip: These people share mutual connections with you — ideal for networking.")
+        print("Tip: These attendees share mutual connections — consider facilitating an introduction.")
         break
+
+
+def key_connectors():
+    print("\nKey Connectors at this Conference")
+    print("(Attendees ranked by number of connections)")
+    print("--------------------------------------------------")
+
+    # Neo4j query to count connections per attendee
+    driver = get_neo4j_driver()
+
+    with driver.session(database="appdbprojNeo4j") as session:
+        result = session.run(
+            """
+            MATCH (a:Attendee)
+            OPTIONAL MATCH (a)-[:CONNECTED_TO]-(b:Attendee)
+            RETURN a.AttendeeID AS id, COUNT(DISTINCT b) AS connections
+            ORDER BY connections DESC
+            LIMIT 10
+            """
+        )
+        connectors = list(result)
+
+    driver.close()
+
+    if not connectors:
+        print("No connection data available")
+        return
+
+    # MySQL query to get names and companies for top connectors
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    ids = [c["id"] for c in connectors]
+    format_strings = ",".join(["%s"] * len(ids))
+
+    cursor.execute(f"""
+        SELECT a.attendeeID, a.attendeeName, c.companyName
+        FROM attendee a
+        JOIN company c ON a.attendeeCompanyID = c.companyID
+        WHERE a.attendeeID IN ({format_strings})
+    """, tuple(ids))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Build lookup map
+    data_map = {row[0]: {"name": row[1], "company": row[2]} for row in rows}
+
+    # Display results
+    print(f"\n{'Rank':<5} | {'Name':<20} | {'Company':<20} | Connections")
+    print("------------------------------------------------------------------")
+
+    rank = 1
+    for c in connectors:
+        cid = c["id"]
+        count = c["connections"]
+        person = data_map.get(cid, {})
+        name = person.get("name", "Unknown")
+        company = person.get("company", "Unknown")
+
+        print(f"{rank:<5} | {name:<20} | {company:<20} | {count}")
+        rank += 1
+
+    print("\nTip: These are your most networked attendees — ideal for panels, table leads, or introductions.")

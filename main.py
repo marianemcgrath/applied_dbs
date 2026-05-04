@@ -5,7 +5,7 @@ from db_connection import get_connection
 from neo4j_connection import get_neo4j_driver
 
 # INNOVATION FEATURE - import networking function from dao.py
-from dao import suggest_connections
+from dao import suggest_connections, key_connectors
 
 # Cache for rooms (loaded once per session - option 6 requirement)
 _rooms_cache = None
@@ -274,7 +274,7 @@ def main():
         print("4 - View Connected Attendees")
         print("5 - Add Attendee Connection")
         print("6 - View Rooms")
-        print("7 - People you should meet")  # INNOVATION FEATURE
+        print("7 - Networking Suggestions")  # INNOVATION FEATURE
         print("x - Exit application")
         
         choice = input("Choice: ")
@@ -292,7 +292,8 @@ def main():
         elif choice == "6":
             view_rooms()
         elif choice == "7":
-            suggest_connections()  # INNOVATION FEATURE
+            suggest_connections()
+            key_connectors()  # INNOVATION FEATURE
         elif choice == "x":
             print("Goodbye!")
             break

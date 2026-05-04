@@ -1,77 +1,134 @@
 # Applied Databases Project 2026 — Conference Management System
+**Author:** Mariane McGrath  
+**Module:** Applied Databases — HDip in Science in Data Analytics, ATU
 
-This project was completed for the Applied Databases module as part of the HDip Data Analytics course at ATU. 
+---
 
-Author: Mariane McGrath
+## Overview
 
-✨ Overview
+A conference management system built with a hybrid database approach — MySQL for structured 
+data, Neo4j for relationship data. The system lets event organisers manage attendees, 
+companies, sessions, and rooms, while also surfacing intelligent networking insights 
+from the connections between attendees.
 
-✨ Overview
+- **MySQL** → attendees, companies, sessions, rooms, registrations
+- **Neo4j** → professional connections between attendees
+- **Python** → application logic, DAO pattern, menu-driven interface
 
-This application is a conference management system that integrates both relational and graph databases to manage attendees, companies, and professional connections.
+---
 
- - MySQL → structured data (attendees, companies)
- - Neo4j → relationships between attendees
+## Features
 
-A key feature of the system is a networking tool that actively recommends new professional connections.
+- View speakers and their sessions
+- View attendees by company
+- Add new attendees
+- View an attendee's existing connections
+- Add new connections between attendees
+- View room details (cached per session)
+- **Networking Intelligence Tool** *(Innovation Feature — see below)*
 
-🤝 Innovation Feature - Suggested Connections (Social Network)
+---
 
-The Suggested Connections feature allows users to discover new attendees to connect with using friend-of-a-friend relationships.
+## 🤝 Innovation Feature — Networking Intelligence Tool
 
-Features:
+A conference is only as valuable as the connections and the experience it creates. The Networking Intelligence 
+Tool gives event organisers two powerful views of their attendee network — one focused on individuals and
+one on the conference as a whole.
 
- * Supports 2–4 degrees of separation
- * Excludes existing direct connections
- * Recommends relevant new contacts
- * Displays degree of separation
- * Enriches results with attendee and company data
+This enables organisers to identify high-value networking opportunities and support targeted introductions
+between attendees.
 
-This transforms the system from a static database into a recommendation engine for networking.
+### What it does:
 
-🛠 Tech Stack
- - Python
- - Neo4j
- - MySQL
- - neo4j driver
- - mysql-connector-python
- - python-dotenv
+**1. Suggested Connections (Attendee-level)**
 
-⚙️ Installation
+- Enter any attendee ID
+- The system traverses the Neo4j graph to find second-to-fourth degree connections
+- Suggestions are ranked by number of mutual connections (most relevant first)
+- Results are enriched with attendee name, company, and sessions attended
+- Existing direct connections are excluded — no noise, just new leads
+
+This enables organisers to facilitate meaningful introductions. Instead of leaving networking to chance,
+they can proactively suggest who should meet who, supporting more effective engagement during the event.
+
+**2. Key Connectors (Conference-level)**
+
+- No input needed — this is a bird's-eye view of the whole network
+- Ranks all attendees by their number of connections
+- Identifies highly connected attendees who may act as central nodes within the network, supporting decisions around
+group facilitation, panel selection, or networking activities.
+
+This is useful for things like seating plans, panel selection, breakout group design, 
+or simply knowing who the natural connectors in the room are.
+
+### Why Neo4j?
+
+Relationship traversal at multiple degrees of separation is exactly what graph databases are built for. Running this kind
+of query in MySQL would require complex recursive joins — in Neo4j it's a natural, efficient path query.
+
+Together, these two views turn the system from a static database into a network analysis and decision-support tool (built into the organiser's
+existing workflow).
+
+This demonstrates the suitability of graph databases for complex relationship-heavy queries that are inefficient in relational models.
+
+---
+
+## Tech Stack
+
+- Python
+- MySQL (`mysql-connector-python`)
+- Neo4j (`neo4j` driver)
+- `python-dotenv` for environment variables
+
+---
+
+## Installation
+
+```bash
 pip install neo4j mysql-connector-python python-dotenv
+```
 
-▶️ Run the Application
+---
+
+## Setup
+
+1. Import `appdbproj.sql` into MySQL
+2. Import `appdbprojNeo4j.json` into a Neo4j database called `appdbprojNeo4j`
+3. Ensure MySQL and Neo4j are both running before launching the app
+
+---
+
+## Run
+
+```bash
 python main.py
+```
 
-🚀 Using the Networking Feature
- 1. Run the application
- 2. Select Option 7 — Networking
- 3. Enter an attendee ID
- 4. Choose degree of separation (2–4)
- 5. View suggested connections
+---
 
-🔍 Verify in Neo4j Browser
+## Project Structure
 
-Run the following query to visualise relationships:
+main.py             # Menu-driven application entry point
+dao.py              # All database logic (DAO pattern)
+db_connection.py    # MySQL connection helper
+neo4j_connection.py # Neo4j connection helper
+GitLink.pdf         # Link to GitHub repository
 
-MATCH (a:Attendee {AttendeeID: 101})-[:CONNECTED_TO*1..3]-(b:Attendee)
-RETURN a, b
+---
 
-📁 Project Structure
+## Design Decisions
 
-main.py        # Application entry point  
-dao.py         # Database logic (DAO pattern)  
-.env           # Environment variables
+- **DAO pattern** keeps database logic cleanly separated from application logic
+- **Hybrid database approach** — relational for structure, graph for relationships
+- **Room data is cached** on first load and reused for the session (as per spec)
+- **Neo4j MERGE** is used when adding connections, so nodes are created automatically 
+  if they do not already exist
 
-🧠 Design Choices
+---
 
- * A graph database is used for efficient relationship traversal
- * A relational database is used for structured data storage
- * The DAO pattern separates database logic from application logic
- * A hybrid database approach improves both performance and clarity
+## Notes
 
-⚠️ Notes
-
- * Designed to run in a VM environment
- * Ensure MySQL and Neo4j are running before execution
- * No additional dependencies required beyond installation step
+- Designed and tested for the ATU VM environment
+- MySQL and Neo4j must both be running before launching the app
+- The networking feature requires a minimum level of connectivity in the Neo4j
+  graph to return meaningful results.
