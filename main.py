@@ -292,7 +292,7 @@ def main():
         elif choice == "6":
             view_rooms()
         elif choice == "7":
-            suggest_connections()               # INNOVATION FEATURE
+            suggest_connections()  # INNOVATION FEATURE
         elif choice == "x":
             print("Goodbye!")
             break
