@@ -1,228 +1,245 @@
-1. Rationale
+# Innovation Feature: Networking Intelligence Tool
+
+## 1. Rationale
 
 Considering the importance of professional networking in conferences, this project introduces a feature that supports the identification of meaningful connections between attendees.
 
-Professional relationships often grow through shared interests and mutual contacts, so I proposed a networking menu that recommends connections through friend-of-a-friend relationships
-who are not directly connected, by up to 4 levels of separation.
+Professional relationships often grow through shared interests and mutual contacts. Therefore, this project proposes a networking menu that recommends connections through friend-of-a-friend (second-degree) relationships who are not directly connected, exploring up to 4 levels of separation.
 
-Using Neo4j graph relationships, this innovation acts as a simple recommendation engine, showing how graph databases can be used not only to store connections, but to generate meaningful
-networking opportunities for conference attendees. To further support organic connections, the feature also displays the sessions each suggested connection is attending; allowing attendees
-to identify shared interests and natural conversation starters before they even meet.
+Using Neo4j graph relationships, this innovation acts as a simple recommendation engine, showing how graph databases can be used not only to store connections, but to generate meaningful networking opportunities for conference attendees. To further support organic connections, the feature also displays the sessions each suggested connection is attending, allowing attendees to identify shared interests and natural conversation starters before they even meet.
 
 This feature represents a simple form of link prediction within a graph structure.
 
-1.1 Query Logic
+### 1.1 Query Logic
 
-The suggested connections feature is implemented using Neo4j graph traversal. Given an attendee, the system searches for other attendees within two to four degrees of separation using
-a variable-length relationship pattern (*2..4).
+The suggested connections feature is implemented using Neo4j graph traversal. Given an attendee, the system searches for other attendees within two to four degrees of separation using a variable-length relationship pattern (`*2..4`).
 
-The query excludes direct connections and the attendee themselves to ensure only new and relevant suggestions are returned. Since multiple paths may exist between two attendees,
-the minimum path length is selected to represent the closest degree of separation.
+The query excludes direct connections and the attendee themselves to ensure only new and relevant suggestions are returned. Since multiple paths may exist between two attendees, the minimum path length is selected to represent the closest degree of separation.
 
-To prioritise recommendations, the system calculates the number of mutual connections shared between the attendee and each suggested connection. These results are ranked primarily by
-the number of mutual connections (descending) and secondarily by degree of separation (ascending), ensuring that the most relevant and closest connections appear first.
+To prioritise recommendations, the system calculates the number of mutual connections shared between the attendee and each suggested connection. Mutual connections are calculated by finding attendees who share at least one common direct connection with the target attendee, using the pattern `(a)-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)`. These results are ranked primarily by the number of mutual connections (descending) and secondarily by degree of separation (ascending), ensuring that the most relevant and closest connections appear first.
 
-Finally, MySQL is used to enrich the results with attendee details such as name, company, and sessions attended, demonstrating the integration of relational and graph databases within
-the system.
+Finally, MySQL is used to enrich the results with attendee details such as name, company, and sessions attended, demonstrating the integration of relational and graph databases within the system.
 
------------------
+---
 
-2. How It Works
+## 2. How It Works
 
 When the user selects the Networking option (Option 7) from the main menu, they are prompted to:
 
-2.1 Enter an attendee ID
+### 2.1 Enter an attendee ID
 
-The system then performs a graph traversal on the Neo4j database to identify attendees within the selected number of connections. Direct connections and the attendee themselves are
-excluded to ensure only new networking opportunities are suggested.
+The system then performs a graph traversal on the Neo4j database to identify attendees within 2-4 degrees of separation. Direct connections and the attendee themselves are excluded to ensure only new networking opportunities are suggested.
 
 The results display:
 
- * Suggested attendees
- * Degree of separation
- * Additional attendee details retrieved from the MySQL database
- * The conference sessions they are registered to attend
+- Suggested attendees
+- Degree of separation
+- Number of mutual connections
+- Additional attendee details retrieved from the MySQL database
+- The conference sessions they are registered to attend
 
-2.2 The system searches for connections within 2 to 4 degrees of separation.
+### 2.2 Example Scenario
 
-For example, Ava Murphy (ID 101) searches at 2 to 4 degrees, she will see that suggested connection Noah Doyle is attending both Secure API Design and the Graph Modelling Workshop; 
-the same Graph Modelling Workshop she is also registered for, creating an immediate and natural reason to connect.
+The system searches for connections within 2 to 4 degrees of separation.
 
------------------
+For example, when Ava Murphy (ID 101) searches for suggestions, she will see that Noah Doyle (ID 103) is attending both "Secure API Design" and the "Graph Modelling Workshop" — the same Graph Modelling Workshop she is also registered for, creating an immediate and natural reason to connect.
 
-3. Technical Implementation
+---
 
-3.1 Graph-Based Relationship Modelling (Neo4j)
+## 3. Technical Implementation
 
-Attendee connections are represented in Neo4j using CONNECTED_TO relationships. This graph structure enables efficient traversal of indirect relationships (e.g. friend-of-a-friend),
-which would be significantly more complex to implement using a purely relational database.
+### 3.1 Graph-Based Relationship Modelling (Neo4j)
 
-To generate recommendations, the system performs a bounded traversal using Neo4j’s pathfinding capabilities. Specifically, a variable-length relationship pattern is used, with
-the minimum path length selected to represent the shortest connection between attendees. 
+Attendee connections are represented in Neo4j using `CONNECTED_TO` relationships. This graph structure enables efficient traversal of indirect relationships (e.g., friend-of-a-friend), which would be significantly more complex to implement using a purely relational database.
+
+To generate recommendations, the system performs a bounded traversal using Neo4j's pathfinding capabilities. Specifically, a variable-length relationship pattern is used, with the minimum path length selected to represent the shortest connection between attendees.
 
 This approach ensures:
 
- * Efficient querying of multi-level relationships
- * Avoidance of unnecessary traversal beyond the specified depth
- * Accurate calculation of degree of separation for each suggested attendee
+- Efficient querying of multi-level relationships
+- Avoidance of unnecessary traversal beyond the specified depth
+- Accurate calculation of degree of separation for each suggested attendee
 
-
-3.2 Filtering Logic
+### 3.2 Filtering Logic
 
 To maintain relevance and avoid redundant recommendations, the query includes filtering conditions to:
 
- * Exclude the selected attendee
- * Exclude all direct connections (degree = 1)
- * Return only new, indirect connections (degree ≥ 2)
+- Exclude the selected attendee
+- Exclude all direct connections (degree = 1)
+- Return only new, indirect connections (degree ≥ 2)
 
 This ensures that all results represent meaningful networking opportunities rather than existing relationships.
 
-3.3 Data Enrichment (Neo4j + MySQL Integration)
+### 3.3 Data Enrichment (Neo4j + MySQL Integration)
 
-While Neo4j identifies the relationships, attendee details are stored in MySQL. After retrieving suggested attendee IDs from Neo4j, the system performs a JOIN query across the
-attendee, company, registration, and session tables to enrich results with names, company information, and session attendance. This hybrid approach allows Neo4j to specialise
-in relationship traversal while MySQL manages structured attendee data.
+While Neo4j identifies the relationships, attendee details are stored in MySQL. After retrieving suggested attendee IDs from Neo4j, the system performs a JOIN query across the `attendee`, `company`, `registration`, and `session` tables to enrich results with names, company information, and session attendance. This hybrid approach allows Neo4j to specialise in relationship traversal while MySQL manages structured attendee data.
 
-3.4 DAO Pattern and Code Structure
+### 3.4 DAO Pattern and Code Structure
 
-The feature is implemented in a dedicated dao.py file using the Data Access Object (DAO) pattern, which separates database logic from the main application flow.
+The feature is implemented in a dedicated `dao.py` file using the Data Access Object (DAO) pattern, which separates database logic from the main application flow.
 
 This design provides several advantages:
 
- * Improves maintainability by isolating query logic
- * Makes the codebase easier to test and extend
- * Allows database queries to be reused across different parts of the application
+- Improves maintainability by isolating query logic
+- Makes the codebase easier to test and extend
+- Allows database queries to be reused across different parts of the application
 
-For example, the method responsible for retrieving suggested connections:
+For example, the `suggest_connections()` method:
 
- * Accepts an attendee ID and degree limit
- * Executes the Neo4j traversal query
- * Applies filtering rules
- * Returns a clean list of recommended attendee IDs
- * Scalability and Design Considerations
+- Accepts an attendee ID
+- Executes the Neo4j traversal query with 2-4 degree limits
+- Applies filtering rules to exclude direct connections
+- Returns ranked recommendations with mutual connection scores
 
-3.5 Scalability
+### 3.5 Scalability and Design Considerations
 
-Using a graph database for this feature provides a scalable solution for handling increasingly complex networks. As the number of attendees and connections grows, graph traversal
-remains efficient compared to recursive joins in relational systems.
+Using a graph database for this feature provides a scalable solution for handling increasingly complex networks. As the number of attendees and connections grows, graph traversal remains efficient compared to recursive joins in relational systems.
 
 Additionally, limiting traversal depth (2–4 levels) ensures:
 
- * Controlled query performance
- * Relevant and meaningful recommendations
- * Prevention of overly distant or irrelevant connections
+- Controlled query performance
+- Relevant and meaningful recommendations
+- Prevention of overly distant or irrelevant connections
 
------------------
+---
 
-4. GDPR Considerations
+## 4. Limitations
 
-The Networking feature displays suggested connections alongside their session attendance data, which constitutes personal data under the EU General Data Protection Regulation (GDPR)
-as enacted in Ireland through the Data Protection Act 2018. In a production environment, this feature would typically require a lawful basis, such as legitimate interest under
-Article 6(1)(f) GDPR — given that sharing session attendance between conference attendees serves a proportionate networking purpose. To minimise data exposure, the feature 
-intentionally limits what is visible: only session titles are displayed, with no sensitive personal details such as date of birth or gender surfaced. In a real-world deployment, 
-attendees would need to be informed of this visibility through a transparent privacy notice at the point of registration, in line with Articles 13 and 14 GDPR. 
+The recommendation engine has the following limitations by design:
 
-The friend-of-a-friend traversal was also designed with proportionality in mind — results are filtered to exclude direct connections and capped at a maximum of 4 degrees to avoid
-surfacing data about individuals with no relationships.
+- **Degree limitation:** Suggestions are limited to 2-4 degrees of separation, which may miss potentially valuable connections beyond this range
+- **Unweighted connections:** Mutual connection counts do not weight connection strength (e.g., no distinction between professional vs. social connections)
+- **Session attendance as proxy:** Session attendance is used as a proxy for shared interests, which assumes attendees choose sessions based on genuine interest
+- **No industry filtering:** The feature does not consider company affiliation or industry sector when ranking suggestions
+- **Cold start problem:** Attendees with few or no existing connections receive limited or no suggestions
 
------------------
+These limitations represent intentional design decisions to balance relevance, performance, and user experience in a conference networking context.
 
-5. Packages Required
+---
+
+## 5. GDPR Considerations
+
+The Networking feature displays suggested connections alongside their session attendance data, which constitutes personal data under the EU General Data Protection Regulation (GDPR) as enacted in Ireland through the Data Protection Act 2018.
+
+In a production environment, this feature would typically require a lawful basis, such as legitimate interest under Article 6(1)(f) GDPR, which requires a balancing test between the organiser's interest in facilitating networking and the attendee's privacy rights. Given that sharing session attendance between conference attendees serves a proportionate networking purpose under Article 6(1)(f), this basis would likely be appropriate.
+
+To minimise data exposure, the feature intentionally limits what is visible: only session titles are displayed, with no sensitive personal details such as date of birth or gender surfaced. In a real-world deployment, attendees would need to be informed of this visibility through a transparent privacy notice at the point of registration, in line with Articles 13 and 14 GDPR.
+
+The friend-of-a-friend traversal was also designed with proportionality in mind — results are filtered to exclude direct connections and capped at a maximum of 4 degrees to avoid surfacing data about individuals with no reasonable relationship to the searching attendee.
+
+---
+
+## 6. Packages Required
 
 No additional packages are required beyond those already used in the project. All dependencies can be installed with:
 
+```bash
 pip install neo4j mysql-connector-python python-dotenv
 
------------------
-
-6. Testing on the VM
-
+7. Testing on the VM
 Step 1 — Launch the application
-
 Run python main.py. Confirm all 7 menu options display correctly.
 
-Step 2 — Select Option 7 (Networking)
-
+Step 2 — Select Option 7 (Networking Suggestions)
 Test Case 1 — Invalid attendee ID (non-numeric)
+Input: abc
 
- * Input: abc
- * Expected: *** ERROR *** Invalid attendee ID
+Expected: *** ERROR *** Invalid attendee ID
 
-Test Case 2 — Non-existent attendee
+Test Case 2 — Empty input
+Input: [Enter]
 
- * Input: 999
- * Expected: *** ERROR *** Attendee does not exist
+Expected: *** ERROR *** Attendee ID cannot be empty
 
- The following test cases demonstrate results observed at each level within this range.
+Test Case 3 — Non-existent attendee
+Input: 999
 
-Test Case 3 — 2 degrees of separation (Ava Murphy, ID 101)
+Expected: *** ERROR *** Attendee does not exist
 
- * Direct connections: 107 (Mia O'Brien), 109 (Ella Finn), 111 (Grace Power)
- * Expected output: Results at 2 degrees of separation 
+Test Case 4 — 2 degrees of separation (Ava Murphy, ID 101)
+Direct connections: 107 (Mia O'Brien), 109 (Ella Finn), 111 (Grace Power)
 
-    2 degrees away       | 115    | Chloe Hunt          | EduSpark
-                                    Sessions: EdTech Product Analytics
-    2 degrees away       | 103    | Noah Doyle          | NeoRetail
-                                    Sessions: Secure API Design
-                                    Sessions: Graph Modelling Workshop
+Expected output: Results at 2 degrees of separation
 
-Test Case 4 — 3 degrees of separation (Ava Murphy, ID 101)
+Rank | Name                 | Mutual | Degree
+--------------------------------------------------
+1    | Noah Doyle           | 2      | 2
+     Company: NeoRetail
+     Sessions: Secure API Design, Graph Modelling Workshop
 
- * Expected output: Results at 3 degrees of separation 
+2    | Chloe Hunt           | 1      | 2
+     Company: EduSpark
+     Sessions: EdTech Product Analytics
 
-    2 degrees away       | 115    | Chloe Hunt          | EduSpark
-                                    Sessions: EdTech Product Analytics
-    2 degrees away       | 103    | Noah Doyle          | NeoRetail
-                                    Sessions: Secure API Design
-                                    Sessions: Graph Modelling Workshop
-    3 degrees away       | 120    | Sean Dempsey        | GreenGrid
-                                    Sessions: Energy Dashboards at Scale
-    3 degrees away       | 106    | Jack Kelly          | FinPilot
-                                    Sessions: FinTech Risk Signals
-                                    Sessions: Building Reliable ETL Jobs
 
-Test Case 5 — 4 degrees of separation (Ava Murphy, ID 101)
+Test Case 5 — 3 degrees of separation (Ava Murphy, ID 101)
+Expected output: Additional results at 3 degrees
 
- * Expected output: Results at 4 degrees of separation 
+3    | Sean Dempsey         | 1      | 3
+     Company: GreenGrid
+     Sessions: Energy Dashboards at Scale
 
-    2 degrees away       | 115    | Chloe Hunt          | EduSpark
-                                    Sessions: EdTech Product Analytics
-    2 degrees away       | 103    | Noah Doyle          | NeoRetail
-                                    Sessions: Secure API Design
-                                    Sessions: Graph Modelling Workshop
-    3 degrees away       | 120    | Sean Dempsey        | GreenGrid
-                                    Sessions: Energy Dashboards at Scale
-    3 degrees away       | 106    | Jack Kelly          | FinPilot
-                                    Sessions: FinTech Risk Signals
-                                    Sessions: Building Reliable ETL Jobs
-    4 degrees away       | 104    | Emma Walsh          | GreenGrid
-                                    Sessions: AI in Healthcare Operations
-                                    Sessions: Energy Dashboards at Scale
-    4 degrees away       | 114    | Adam Hayes          | FinPilot
-                                    Sessions: FinTech Risk Signals
+4    | Jack Kelly           | 1      | 3
+     Company: FinPilot
+     Sessions: FinTech Risk Signals, Building Reliable ETL Jobs
 
-Test Case 6 — Attendee with no suggestions (Liam Byrne, ID 102)
+Test Case 6 — 4 degrees of separation (Ava Murphy, ID 101)
+Expected output: Additional results at 4 degrees
 
- * 102 is connected only to 110 (Cian Roche), who has no onward connections
- * Input: Attendee ID 102, degree 2
- * Expected: No networking suggestions found within 2 degrees.
+5    | Emma Walsh           | 1      | 4
+     Company: GreenGrid
+     Sessions: AI in Healthcare Operations, Energy Dashboards at Scale
+
+6    | Adam Hayes           | 1      | 4
+     Company: FinPilot
+     Sessions: FinTech Risk Signals
+
+Test Case 7 — Attendee with no suggestions within 2-4 degrees (Liam Byrne, ID 102)
+Context: ID 102 is connected only to 110 (Cian Roche), who has no onward connections within 4 degrees
+
+Input: Attendee ID 102
+
+Expected: No suggestions available (no suitable connections found within 2–4 degrees)
 
 Step 3 — Verify in Neo4j Browser
+Execute the following Cypher query to verify results:
 
 MATCH path = (a:Attendee {AttendeeID: 101})-[:CONNECTED_TO*2..4]-(s:Attendee)
 WHERE NOT (a)-[:CONNECTED_TO]-(s) AND s.AttendeeID <> 101
 RETURN s.AttendeeID AS suggested, MIN(length(path)) AS degrees
 ORDER BY degrees
 
-Confirm returned IDs match: 115, 103, 120, 106, 104, 114.
+Confirm returned IDs match: 103, 115, 120, 106, 104, 114
 
 Step 4 — Cross-reference MySQL
-
 Verify session registrations for suggested connections match the application output:
-Attendee     | Company Sessions      | Attending
-Chloe Hunt (115) | EduSpark  | EdTech Product Analytics | 
-Noah Doyle (103) | NeoRetail | Secure API Design, Graph Modelling Workshop | 
-Sean Dempsey (120) | GreenGrid | Energy Dashboards at Scale | 
-Jack Kelly (106) | FinPilot | FinTech Risk Signals, Building Reliable ETL Jobs | 
-Emma Walsh (104) | GreenGrid | AI in Healthcare Operations, Energy Dashboards at Scale | 
-Adam Hayes (114) | FinPilot | FinTech Risk Signals | 
+
+[ADD VISUALS]
+
+Step 5 — Test Key Connectors Feature
+Select Option 7, then the system will automatically display both suggestion and key connectors rankings. Verify:
+
+Top 10 attendees by connection count are displayed
+
+Output includes attendee name, company, and connection count
+
+Ranking is ordered from highest to lowest connections
+
+8. Business Value
+This innovation feature provides tangible value to conference organisers and attendees:
+
+For attendees:
+
+ * Reduces networking friction by identifying relevant connections
+
+ * Provides conversation starters through shared session attendance
+
+ * Reveals hidden network opportunities beyond immediate connections
+
+For organisers:
+
+ * Identifies key connectors for panel selection and facilitated introductions
+
+ * Creates data-driven networking opportunities
+
+ * Enhances conference ROI through meaningful attendee engagement

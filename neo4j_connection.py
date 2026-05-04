@@ -1,3 +1,6 @@
+# Neo4j connection module for conference management system
+# Author: Mariane McGrath
+
 import os
 from dotenv import load_dotenv
 from neo4j import GraphDatabase

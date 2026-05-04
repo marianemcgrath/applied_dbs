@@ -1,3 +1,3 @@
-python
 mysql-connector-python
 neo4j
+python-dotenv
