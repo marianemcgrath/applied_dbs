@@ -1,17 +1,24 @@
 # Applied Databases Project 2026 — Conference Management System
 
 **Author:** Mariane McGrath  
-**Module:** Applied Databases — HDip in Science in Data Analytics, ATU
+**Module:** Applied Databases — Higher Diploma in Computing in Data Analytics, ATU
 
 ---
 
 ## Overview
 
-A conference management system built with a hybrid database approach — MySQL for structured data, Neo4j for relationship data. The system lets event organisers manage attendees, companies, sessions, and rooms, while also surfacing intelligent networking insights from the connections between attendees.
+A conference management system built with a hybrid database approach — MySQL for structured data, Neo4j for relationship data. The system is a manager-only tool, giving event organisers full control over attendee data, session management, and networking insights.
 
 - **MySQL** → attendees, companies, sessions, rooms, registrations
 - **Neo4j** → professional connections between attendees
 - **Python** → application logic, DAO pattern, menu-driven interface
+
+---
+
+## System Architecture
+
+![System architecture diagram displaying main.py as the central hub. main.py connects to MySQL through db_connection.py on the left side and to Neo4j through neo4j_connection.py on the right side. dao.py provides the networking layer between these components. The event manager interacts exclusively with main.py at the top of the diagram.](images/system_architecture.png)
+
 
 ---
 
@@ -27,15 +34,24 @@ A conference management system built with a hybrid database approach — MySQL f
 
 ---
 
-## 🤝 Innovation Feature — Networking Intelligence Tool
+## Database Schema (ERD)
+
+
+![Entity relationship diagram showing five tables: COMPANY, ATTENDEE, SESSION, REGISTRATION, and ROOM, with their fields and relationships.](images/database_schema.png)
+
+---
+
+## Innovation Feature — Networking Intelligence Tool
 
 A conference is only as valuable as the connections it creates. The Networking Intelligence Tool gives event organisers two powerful views of their attendee network — one focused on individuals and one on the conference as a whole.
 
 This enables organisers to identify high-value networking opportunities and support targeted introductions between attendees.
 
-### What it does:
+![Howv the innovation feature (suggest_connections + key_connectors) works end-to-end](images/option7_networking.png)
 
-**1. Suggested Connections (Attendee-level)**
+### What it does
+
+**1. Suggested connections (attendee-level)**
 
 - Enter any attendee ID
 - The system traverses the Neo4j graph to find second-to-fourth degree connections
@@ -43,21 +59,64 @@ This enables organisers to identify high-value networking opportunities and supp
 - Results are enriched with attendee name, company, and sessions attended
 - Existing direct connections are excluded — no noise, just new leads
 
-This enables organisers to facilitate meaningful introductions. Instead of leaving networking to chance, they can proactively suggest who should meet whom, supporting more effective engagement during the event.
-
-**2. Key Connectors (Conference-level)**
+**2. Key connectors (conference-level)**
 
 - No input needed — a bird's-eye view of the whole network
 - Ranks all attendees by their number of connections
 - Identifies highly connected attendees who may act as central nodes within the network
 
-This is useful for seating plans, panel selection, breakout group design, or simply knowing who the natural connectors in the room are.
+Useful for seating plans, panel selection, breakout group design, or knowing who the natural connectors in the room are.
+
+
+### Neo4j graph — full connection overview
+
+The graph below shows all `CONNECTED_TO` relationships in the database (LIMIT 10). The results overview panel confirms 16 attendee nodes and 10 CONNECTED_TO relationships loaded successfully.
+
+![Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]->(b:Attendee) RETURN a, r, b LIMIT 10. Results panel shows 16 Attendee nodes and 10 CONNECTED_TO relationships.]
+
+### Neo4j graph — all connections (LIMIT 20)
+
+A broader view of the attendee connection graph showing the network structure across nodes including 103, 104, 106, 111, 114, 120, 105, 113, 102, and 110.
+
+![Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]-(b:Attendee) RETURN a, r, b LIMIT 20. Distributed network of green Attendee nodes with CONNECTED_TO edges.](images/attendee_connections.png)
+
+### Neo4j graph — 1 to 4 degree traversal from attendee 106
+
+All connections reachable from attendee 106 within 1–4 degrees, showing the full extent of their network before filtering.
+
+![Neo4j Browser: MATCH p = (u:Attendee {AttendeeID: 106})-[:CONNECTED_TO*1..4]-(c) RETURN p. Graph shows attendee 106 connected through nodes 120, 103, 104, 111, 101, 109, 107, and 114.](images/attendee_connections_1to4.png)
+
+### Neo4j graph — 2 to 4 degree traversal (the suggest_connections query)
+
+This is the core query behind `suggest_connections()` in `dao.py`. Starting from attendee 106, it finds nodes reachable at 2–4 degrees while excluding existing direct connections — returning only new, relevant suggestions.
+
+![Neo4j Browser: MATCH p = (u:Attendee {AttendeeID: 106})-[:CONNECTED_TO*2..4]-(c) WHERE NOT (u)-[:CONNECTED_TO]-(c) RETURN p. Indirect connections from 106 through nodes 111, 101, 103, 104, 120, 107, and 109 with direct connections filtered out.](docs/screenshots/2_to_4_degree_traversal_connections.png)
 
 ### Why Neo4j?
 
-Relationship traversal at multiple degrees of separation is exactly what graph databases are built for. Running this kind of query in MySQL would require complex recursive joins — in Neo4j it's a natural, efficient path query.
+Relationship traversal at multiple degrees of separation is exactly what graph databases are built for. Running this kind of query in MySQL would require complex recursive joins — in Neo4j it is a natural, efficient path query.
 
-Together, these two views turn the system from a static database into a network analysis and decision-support tool built into the organiser's existing workflow.
+### Option 7 flow
+
+![Flowchart showing how option 7 calls suggest_connections() and key_connectors() in sequence. suggest_connections() validates the attendee ID in MySQL, traverses Neo4j for 2–4 degree paths ranked by mutual connections, then enriches results with MySQL name and company data before displaying a ranked table.](images/option7_networking.png)
+
+---
+
+## Usage
+
+### Terminal interface
+
+The system runs as a menu-driven terminal application. All options are accessed by event managers only.
+
+![Terminal mockup showing the conference management menu with options 1–7 and x to exit. Option 7 is highlighted. Below the menu, a sample output for attendee 101 shows two suggested connections with rank, name, mutual connection count, degree, company, and sessions attended.](images/ui_mockup.png)
+
+---
+
+## Data Flow — View Connected Attendees (Option 4)
+
+Option 4 is a good example of the two-database pattern used throughout the system. MySQL handles validation and name resolution; Neo4j handles the graph traversal.
+
+![Data flow diagram for option 4. The event manager enters an attendee ID. main.py validates the ID in MySQL (query 1), then queries Neo4j for CONNECTED_TO relationships to retrieve connected IDs, then queries MySQL again to resolve names for display (query 2). Results are returned to the event manager.](images/data_flow_connections.png)
 
 ---
 
@@ -81,7 +140,7 @@ pip install neo4j mysql-connector-python python-dotenv
 ## Setup
 
 1. Import `appdbproj.sql` into MySQL
-2. Import `appdbprojNeo4j.json` into a Neo4j database called `appdbprojNeo4j`
+2. Import `appdbprojNeo4j.cypher` into a Neo4j database called `appdbprojNeo4j`
 3. Ensure MySQL and Neo4j are both running before launching the app
 
 ---
@@ -96,6 +155,7 @@ python main.py
 
 ## Project Structure
 
+```
 ├── main.py                 # Menu-driven application entry point
 ├── dao.py                  # All database logic (DAO pattern)
 ├── db_connection.py        # MySQL connection helper
@@ -105,6 +165,7 @@ python main.py
 ├── innovationfeature.pdf   # Innovation documentation
 ├── appdbproj.sql           # MySQL database dump
 └── appdbprojNeo4j.cypher   # Neo4j database dump
+```
 
 ---
 
@@ -113,8 +174,8 @@ python main.py
 - **DAO pattern** keeps database logic cleanly separated from application logic
 - **Hybrid database approach** — relational for structure, graph for relationships
 - **Room data is cached** on first load and reused for the session (as per spec)
-- **Neo4j MERGE** is used when adding connections, so nodes are created automatically 
-  if they do not already exist
+- **Neo4j MERGE** is used when adding connections, so nodes are created automatically if they do not already exist
+- **Manager-only access** — the system is designed for event organisers, not attendees
 
 ---
 
@@ -122,5 +183,4 @@ python main.py
 
 - Designed and tested for the ATU VM environment
 - MySQL and Neo4j must both be running before launching the app
-- The networking feature requires a minimum level of connectivity in the Neo4j
-  graph to return meaningful results.
+- The networking feature requires a minimum level of connectivity in the Neo4j graph to return meaningful results

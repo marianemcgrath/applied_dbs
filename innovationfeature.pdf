@@ -16,7 +16,8 @@ The suggested connections feature is implemented using Neo4j graph traversal. Gi
 
 The query excludes direct connections and the attendee themselves to ensure only new and relevant suggestions are returned. Since multiple paths may exist between two attendees, the minimum path length is selected to represent the closest degree of separation.
 
-To prioritise recommendations, the system calculates the number of mutual connections shared between the attendee and each suggested connection. Mutual connections are calculated by finding attendees who share at least one common direct connection with the target attendee, using the pattern `(a)-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)`. These results are ranked primarily by the number of mutual connections (descending) and secondarily by degree of separation (ascending), ensuring that the most relevant and closest connections appear first.
+To prioritise recommendations, the system calculates the number of mutual connections shared between the attendee and each suggested connection. Mutual connections are calculated by finding attendees who share at least one common direct connection with the target attendee,
+using the pattern `(a)-[:CONNECTED_TO]-(mutual)-[:CONNECTED_TO]-(suggested)`. These results are ranked primarily by the number of mutual connections (descending) and secondarily by degree of separation (ascending), ensuring that the most relevant and closest connections appear first.
 
 Finally, MySQL is used to enrich the results with attendee details such as name, company, and sessions attended, demonstrating the integration of relational and graph databases within the system.
 
@@ -228,7 +229,7 @@ Ranking is ordered from highest to lowest connections
 8. Business Value
 This innovation feature provides tangible value to conference organisers and attendees:
 
-For attendees:
+8.1 For attendees:
 
  * Reduces networking friction by identifying relevant connections
 
@@ -236,7 +237,7 @@ For attendees:
 
  * Reveals hidden network opportunities beyond immediate connections
 
-For organisers:
+8.2 For organisers:
 
  * Identifies key connectors for panel selection and facilitated introductions
 
