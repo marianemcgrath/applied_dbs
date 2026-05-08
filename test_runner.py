@@ -5,7 +5,6 @@
 import subprocess
 import sys
 
-
 def run_test(test_name, inputs, expected_strings):
     print(f"\n{'='*60}")
     print(f"TEST: {test_name}")

@@ -47,7 +47,7 @@ A conference is only as valuable as the connections it creates. The Networking I
 
 This enables organisers to identify high-value networking opportunities and support targeted introductions between attendees.
 
-![Howv the innovation feature (suggest_connections + key_connectors) works end-to-end](images/option7_networking.png)
+![How the innovation feature works end-to-end (suggest_connections + key_connectors)](images/option7_networking.png)
 
 ### What it does
 
@@ -72,7 +72,7 @@ Useful for seating plans, panel selection, breakout group design, or knowing who
 
 The graph below shows all `CONNECTED_TO` relationships in the database (LIMIT 10). The results overview panel confirms 16 attendee nodes and 10 CONNECTED_TO relationships loaded successfully.
 
-![Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]->(b:Attendee) RETURN a, r, b LIMIT 10. Results panel shows 16 Attendee nodes and 10 CONNECTED_TO relationships.](images/neo4j_graph_model.png)
+[Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]->(b:Attendee) RETURN a, r, b LIMIT 10. Results panel shows 16 Attendee nodes and 10 CONNECTED_TO relationships.](images/neo4j_graph_model.png)
 
 ### Neo4j graph — all connections (LIMIT 20)
 
@@ -90,7 +90,7 @@ All connections reachable from attendee 106 within 1–4 degrees, showing the fu
 
 This is the core query behind `suggest_connections()` in `dao.py`. Starting from attendee 106, it finds nodes reachable at 2–4 degrees while excluding existing direct connections — returning only new, relevant suggestions.
 
-![Neo4j Browser: MATCH p = (u:Attendee {AttendeeID: 106})-[:CONNECTED_TO*2..4]-(c) WHERE NOT (u)-[:CONNECTED_TO]-(c) RETURN p. Indirect connections from 106 through nodes 111, 101, 103, 104, 120, 107, and 109 with direct connections filtered out.](docs/screenshots/2_to_4_degree_traversal_connections.png)
+![Neo4j Browser: MATCH p = (u:Attendee {AttendeeID: 106})-[:CONNECTED_TO*2..4]-(c) WHERE NOT (u)-[:CONNECTED_TO]-(c) RETURN p. Indirect connections from 106 through nodes 111, 101, 103, 104, 120, 107, and 109 with direct connections filtered out.](images/2_to_4_degree_traversal_connections.png)
 
 ### Why Neo4j?
 

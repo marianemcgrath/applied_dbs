@@ -7,6 +7,9 @@ import os
 
 load_dotenv()
 
+# Source: [https://pypi.org/project/python-dotenv/](PyPI Documentation)
+# Source: [https://12factor.net/config](The Twelve-Factor App - Config)
+
 def get_connection():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),

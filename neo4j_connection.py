@@ -15,3 +15,7 @@ def get_neo4j_driver():
             os.getenv("NEO4J_PASSWORD")
         )
     )
+
+    # Source: [https://neo4j.com/docs/python-manual/current/connect-advanced/](Advanced Connection)
+    # Source: [https://neo4j.com/docs/python-manual/current/](Neo4j Python Driver Manual)
+    # Source: [https://docs.python.org/3/library/os.html#os.getenv](Python 3 Docs: os.getenv)

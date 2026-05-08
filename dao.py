@@ -78,7 +78,11 @@ def suggest_connections():
                 """,
                 id=attendee_id
             )
-            
+
+            # Source: [https://neo4j.com/docs/cypher-manual/current/patterns/reference/](Pattern Reference)
+            # Source: [https://neo4j.com/docs/cypher-manual/current/clauses/match/](MATCH Clause)
+            # Source: [https://neo4j.com/docs/cypher-manual/current/functions/aggregating/](Aggregating Functions)
+
             suggestions = list(result)
         
         if not suggestions:
@@ -96,6 +100,9 @@ def suggest_connections():
         
         ids = [s["id"] for s in suggestions]
         placeholders = ','.join(['%s'] * len(ids))
+
+        # Source: [https://dev.mysql.com/doc/refman/8.4/en/aggregate-functions.html](Aggregate Functions)
+        # Source: [https://dev.mysql.com/doc/refman/8.0/en/join.html](JOIN Syntax)
         
         cursor.execute(f"""
             SELECT 
@@ -110,6 +117,8 @@ def suggest_connections():
             WHERE a.attendeeID IN ({placeholders})
             GROUP BY a.attendeeID, a.attendeeName, c.companyName
         """, tuple(ids))
+
+        # Source: [https://peps.python.org/pep-0249/](Python Database API Specification)
         
         rows = cursor.fetchall()
         conn.close()
@@ -161,6 +170,9 @@ def key_connectors():
             LIMIT 10
             """
         )
+
+        # Source: [https://neo4j.com/docs/cypher-manual/current/clauses/optional-match/](OPTIONAL MATCH Clause)
+        
         connectors = list(result)
     
     driver.close()
@@ -174,7 +186,7 @@ def key_connectors():
     
     ids = [c["id"] for c in connectors]
     placeholders = ','.join(['%s'] * len(ids))
-    
+
     cursor.execute(f"""
         SELECT a.attendeeID, a.attendeeName, c.companyName
         FROM attendee a
@@ -186,6 +198,8 @@ def key_connectors():
     conn.close()
     
     data_map = {row[0]: {"name": row[1], "company": row[2]} for row in rows}
+
+    # Source: [https://docs.python.org/3/tutorial/datastructures.html#dictionaries](Dictionary Comprehensions)
     
     print(f"\n{'Rank':<5} | {'Name':<20} | {'Company':<20} | Connections")
     print("------------------------------------------------------------------")
