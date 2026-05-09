@@ -55,7 +55,7 @@ def suggest_connections():
         
         driver = get_neo4j_driver()
         
-        with driver.session() as session:
+        with driver.session() as session:   # No database parameter (default Aura/ Neo4j free plan compatibility)
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id})
@@ -199,7 +199,7 @@ def key_connectors():
     
     data_map = {row[0]: {"name": row[1], "company": row[2]} for row in rows}
 
-    # Source: [https://docs.python.org/3/tutorial/datastructures.html#dictionaries](Dictionary Comprehensions)
+    # Source: [https://docs.python.org/3/tutorial/datastructures.html#dictionaries](Dictionaries in Python)
     
     print(f"\n{'Rank':<5} | {'Name':<20} | {'Company':<20} | Connections")
     print("------------------------------------------------------------------")

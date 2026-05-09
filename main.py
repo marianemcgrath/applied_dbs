@@ -182,7 +182,7 @@ def view_connected_attendees():
         print("--------------------")
         
         driver = get_neo4j_driver()
-        with driver.session(database="appdbprojNeo4j") as session:
+        with driver.session() as session: # No database parameter (default Aura/ Neo4j free plan compatibility)
             node_check = session.run(
                 "MATCH (a:Attendee {AttendeeID: $id}) RETURN a",
                 id=attendee_id
@@ -244,7 +244,7 @@ def add_attendee_connection():
             continue
         
         driver = get_neo4j_driver()
-        with driver.session(database="appdbprojNeo4j") as session:
+        with driver.session() as session: # No database parameter 
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id1})-[:CONNECTED_TO]-(b:Attendee {AttendeeID: $id2})
