@@ -1,11 +1,99 @@
 #!/usr/bin/env python3
 # Updated test script Conference Management System
-# This script runs a series of tests against the main.py application, simulating user input and checking for expected output.
+# This script runs a series of tests against the main.py application,
+# simulating user input and checking for expected output.
 
 import subprocess
 import sys
+import os
+
+import mysql.connector
+from neo4j import GraphDatabase
+from dotenv import load_dotenv
+
+
+# LOAD ENV VARIABLES
+
+load_dotenv()
+
+MYSQL_HOST = os.getenv("MYSQL_HOST")
+MYSQL_USER = os.getenv("MYSQL_USER")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
+
+NEO4J_URI = os.getenv("NEO4J_URI")
+NEO4J_USER = os.getenv("NEO4J_USER")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+
+
+# DATABASE CONNECTION CHECKS
+
+def check_mysql():
+    """Check if MySQL is running and accessible."""
+
+    try:
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE
+        )
+
+        if conn.is_connected():
+            print("✅ MySQL connection successful")
+            conn.close()
+            return True
+
+    except mysql.connector.Error as err:
+        print(f"❌ MySQL connection failed: {err}")
+
+    return False
+
+
+def check_neo4j():
+    """Check if Neo4j is running and accessible."""
+
+    try:
+        driver = GraphDatabase.driver(
+            NEO4J_URI,
+            auth=(NEO4J_USER, NEO4J_PASSWORD)
+        )
+
+        with driver.session() as session:
+            session.run("RETURN 1")
+
+        print("✅ Neo4j connection successful")
+        driver.close()
+        return True
+
+    except Exception as err:
+        print(f"❌ Neo4j connection failed: {err}")
+
+    return False
+
+
+def check_databases():
+    """Ensure both databases are working before running tests."""
+
+    print("\n" + "=" * 60)
+    print(" CHECKING DATABASE CONNECTIONS")
+    print("=" * 60)
+
+    mysql_ok = check_mysql()
+    neo4j_ok = check_neo4j()
+
+    if not mysql_ok or not neo4j_ok:
+        print("\n❌ Cannot start tests.")
+        print("Please ensure MySQL and Neo4j are both running.")
+        sys.exit(1)
+
+    print("\n✅ All database connections verified.\n")
+
+
+# TEST RUNNER
 
 def run_test(test_name, inputs, expected_strings):
+
     print(f"\n{'='*60}")
     print(f"TEST: {test_name}")
     print(f"{'='*60}")
@@ -27,7 +115,7 @@ def run_test(test_name, inputs, expected_strings):
 
         passed = False
 
-        # Pass if ANY expected string is found (more realistic)
+        # Pass if ANY expected string is found
         for expected in expected_strings:
             if expected.lower() in output:
                 print(f"✅ Found: {expected}")
@@ -45,8 +133,18 @@ def run_test(test_name, inputs, expected_strings):
         print("❌ TEST TIMEOUT")
         return False
 
+    except Exception as err:
+        print(f"❌ TEST ERROR: {err}")
+        return False
+
+
+# MAIN
 
 def main():
+
+    # Check databases before running tests
+    check_databases()
+
     print("\n" + "="*60)
     print(" CONFERENCE MANAGEMENT SYSTEM - FIXED TEST SUITE")
     print("="*60)
@@ -114,6 +212,7 @@ def main():
     print("\n" + "="*60)
     print(" TEST SUMMARY")
     print("="*60)
+
     print(f"✅ Passed: {passed}")
     print(f"❌ Failed: {failed}")
     print(f"📊 Total:  {passed + failed}")

@@ -72,7 +72,7 @@ Useful for seating plans, panel selection, breakout group design, or knowing who
 
 The graph below shows all `CONNECTED_TO` relationships in the database (LIMIT 10). The results overview panel confirms 16 attendee nodes and 10 CONNECTED_TO relationships loaded successfully.
 
-[Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]->(b:Attendee) RETURN a, r, b LIMIT 10. Results panel shows 16 Attendee nodes and 10 CONNECTED_TO relationships.](images/neo4j_graph_model.png)
+![Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]->(b:Attendee) RETURN a, r, b LIMIT 10. Results panel shows 16 Attendee nodes and 10 CONNECTED_TO relationships.](images/neo4j_graph_model.png)
 
 ### Neo4j graph — all connections (LIMIT 20)
 
@@ -127,6 +127,19 @@ Option 4 is a good example of the two-database pattern used throughout the syste
 - Neo4j (`neo4j` driver)
 - `python-dotenv` for environment variables
 
+```bash
+.env.example
+
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=password
+DB_NAME=appdbproj
+
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+```
+
 ---
 
 ## Installation
@@ -171,16 +184,18 @@ python main.py
 
 ## Design Decisions
 
-- **DAO pattern** keeps database logic cleanly separated from application logic
-- **Hybrid database approach** — relational for structure, graph for relationships
-- **Room data is cached** on first load and reused for the session (as per spec)
-- **Neo4j MERGE** is used when adding connections, so nodes are created automatically if they do not already exist
-- **Manager-only access** — the system is designed for event organisers, not attendees
+- **DAO pattern** keeps database logic cleanly separated from application logic.
+- **Hybrid database approach** — relational for structure, graph for relationships.
+- **Room data is cached** on first load and reused for the session (as per spec).
+- **Neo4j MERGE** is used when adding connections to avoid duplicate nodes and relationships once attendee has been validated.
+- **Manager-only access** — the system is designed for event organisers, not attendees.
 
 ---
 
 ## Notes
 
 - Designed and tested for the ATU VM environment
+- The Neo4j export provided issues during import as JSON, therefore the database was exported/imported using Cypher format for
+compatibility and reliability during testing.
 - MySQL and Neo4j must both be running before launching the app
 - The networking feature requires a minimum level of connectivity in the Neo4j graph to return meaningful results

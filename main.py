@@ -4,6 +4,7 @@
 import re
 from db_connection import get_connection
 from neo4j_connection import get_neo4j_driver
+from datetime import datetime
 
 # INNOVATION FEATURE - import networking function from dao.py
 from dao import suggest_connections, key_connectors
@@ -38,7 +39,7 @@ def view_speakers_and_sessions():
         for row in rows:
             print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
     else:
-        print("No speakers found of that name")
+        print("No speakers match search string")
     
     conn.close()
 
@@ -107,7 +108,16 @@ def add_new_attendee():
         conn.close()
         return
     
-    if not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+    # Validate DOB format and range
+    min_date = datetime(1900, 1, 1)
+
+    try:
+        dob_date = datetime.strptime(dob, "%Y-%m-%d")
+
+        if dob_date < min_date or dob_date > datetime.now():
+            raise ValueError
+
+    except ValueError:
         print("*** ERROR *** Invalid DOB")
         conn.close()
         return
