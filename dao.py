@@ -55,7 +55,7 @@ def suggest_connections():
         
         driver = get_neo4j_driver()
         
-        with driver.session(database="appdbprojNeo4j") as session:
+        with driver.session() as session:
             result = session.run(
                 """
                 MATCH (a:Attendee {AttendeeID: $id})
@@ -160,7 +160,7 @@ def key_connectors():
     
     driver = get_neo4j_driver()
     
-    with driver.session(database="appdbprojNeo4j") as session:
+    with driver.session() as session:
         result = session.run(
             """
             MATCH (a:Attendee)

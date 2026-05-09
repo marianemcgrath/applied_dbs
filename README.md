@@ -12,13 +12,11 @@ A conference management system built with a hybrid database approach — MySQL f
 - **MySQL** → attendees, companies, sessions, rooms, registrations
 - **Neo4j** → professional connections between attendees
 - **Python** → application logic, DAO pattern, menu-driven interface
-
 ---
 
 ## System Architecture
 
 ![System architecture diagram displaying main.py as the central hub. main.py connects to MySQL through db_connection.py on the left side and to Neo4j through neo4j_connection.py on the right side. dao.py provides the networking layer between these components. The event manager interacts exclusively with main.py at the top of the diagram.](images/system_architecture.png)
-
 
 ---
 
@@ -31,19 +29,18 @@ A conference management system built with a hybrid database approach — MySQL f
 - Add new connections between attendees
 - View room details (cached per session)
 - **Networking Intelligence Tool** *(Innovation Feature — see below)*
-
 ---
 
 ## Database Schema (ERD)
 
 
 ![Entity relationship diagram showing five tables: COMPANY, ATTENDEE, SESSION, REGISTRATION, and ROOM, with their fields and relationships.](images/database_schema.png)
-
 ---
 
 ## Innovation Feature — Networking Intelligence Tool
 
-A conference is only as valuable as the connections it creates. The Networking Intelligence Tool gives event organisers two powerful views of their attendee network — one focused on individuals and one on the conference as a whole.
+
+Professional networking is one of the primary purposes of conferences. The Networking Intelligence Tool gives event organisers two powerful views of their attendee network — one focused on individuals and one on the conference as a whole.
 
 This enables organisers to identify high-value networking opportunities and support targeted introductions between attendees.
 
@@ -94,12 +91,11 @@ This is the core query behind `suggest_connections()` in `dao.py`. Starting from
 
 ### Why Neo4j?
 
-Relationship traversal at multiple degrees of separation is exactly what graph databases are built for. Running this kind of query in MySQL would require complex recursive joins — in Neo4j it is a natural, efficient path query.
+Relationship traversal across multiple degrees of separation is a natural use case for graph databases. Implementing the same functionality in MySQL would require significantly more complex recursive joins, whereas Neo4j handles this efficiently through native graph traversal.
 
 ### Option 7 flow
 
 ![Flowchart showing how option 7 calls suggest_connections() and key_connectors() in sequence. suggest_connections() validates the attendee ID in MySQL, traverses Neo4j for 2–4 degree paths ranked by mutual connections, then enriches results with MySQL name and company data before displaying a ranked table.](images/option7_networking.png)
-
 ---
 
 ## Usage
@@ -109,7 +105,6 @@ Relationship traversal at multiple degrees of separation is exactly what graph d
 The system runs as a menu-driven terminal application. All options are accessed by event managers only.
 
 ![Terminal mockup showing the conference management menu with options 1–7 and x to exit. Option 7 is highlighted. Below the menu, a sample output for attendee 101 shows two suggested connections with rank, name, mutual connection count, degree, company, and sessions attended.](images/ui_mockup.png)
-
 ---
 
 ## Data Flow — View Connected Attendees (Option 4)
@@ -117,7 +112,6 @@ The system runs as a menu-driven terminal application. All options are accessed 
 Option 4 is a good example of the two-database pattern used throughout the system. MySQL handles validation and name resolution; Neo4j handles the graph traversal.
 
 ![Data flow diagram for option 4. The event manager enters an attendee ID. main.py validates the ID in MySQL (query 1), then queries Neo4j for CONNECTED_TO relationships to retrieve connected IDs, then queries MySQL again to resolve names for display (query 2). Results are returned to the event manager.](images/data_flow_connections.png)
-
 ---
 
 ## Tech Stack
@@ -135,27 +129,46 @@ DB_USER=root
 DB_PASSWORD=password
 DB_NAME=appdbproj
 
-NEO4J_URI=bolt://localhost:7687
+NEO4J_URI=neo4j+s://80769af1.databases.neo4j.io
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 ```
-
 ---
 
 ## Installation
+
+Install required Python packages:
 
 ```bash
 pip install neo4j mysql-connector-python python-dotenv
 ```
 
+This project requires:
+- Python 3.x
+- MySQL Server
+- Neo4j Database
+
+```
 ---
 
-## Setup
+## SetUp
 
 1. Import `appdbproj.sql` into MySQL
-2. Import `appdbprojNeo4j.cypher` into a Neo4j database called `appdbprojNeo4j`
-3. Ensure MySQL and Neo4j are both running before launching the app
+2. Import `appdbprojNeo4j.cypher` into Neo4j
+3. Configure the `.env` file using `.env.example`
+4. Ensure both MySQL and Neo4j services are running before launching the application
 
+The application depends on both databases:
+
+- **MySQL** stores structured conference data
+- **Neo4j** stores attendee relationship data used for networking analysis
+
+Neo4j Aura Free uses the default database name (`neo4j`).  
+For compatibility with Aura, Neo4j sessions in the project use:
+
+```python
+with driver.session() as session:
+```
 ---
 
 ## Run
@@ -163,7 +176,6 @@ pip install neo4j mysql-connector-python python-dotenv
 ```bash
 python main.py
 ```
-
 ---
 
 ## Project Structure
@@ -179,7 +191,6 @@ python main.py
 ├── appdbproj.sql           # MySQL database dump
 └── appdbprojNeo4j.cypher   # Neo4j database dump
 ```
-
 ---
 
 ## Design Decisions
@@ -187,15 +198,55 @@ python main.py
 - **DAO pattern** keeps database logic cleanly separated from application logic.
 - **Hybrid database approach** — relational for structure, graph for relationships.
 - **Room data is cached** on first load and reused for the session (as per spec).
-- **Neo4j MERGE** is used when adding connections to avoid duplicate nodes and relationships once attendee has been validated.
+- **Neo4j MERGE** is used when creating attendee connections to prevent duplicate relationships within the graph.
 - **Manager-only access** — the system is designed for event organisers, not attendees.
+---
 
+## Testing
+
+The project was tested manually and through an automated Python test script (`test_runner.py`).
+
+### Manual Testing
+
+All menu options were tested individually within the ATU VM / GitHub Codespaces environment, including:
+
+- Input validation
+- Invalid IDs
+- Duplicate attendee handling
+- Neo4j connection traversal
+- MySQL data retrieval
+- Networking recommendations
+- Connection creation
+- Room caching functionality
+
+### Automated Testing
+
+The `test_runner.py` script simulates user interaction with the menu-driven application using Python's `subprocess` module.
+
+The script validates:
+
+- Speaker/session lookup
+- Company attendee lookup
+- Attendee insertion
+- Duplicate prevention
+- Gender validation
+- Neo4j attendee connections
+- Relationship creation
+- Room display
+- Networking insights functionality
+
+Example execution:
+
+```bash
+python test_runner.py
+```
 ---
 
 ## Notes
 
-- Designed and tested for the ATU VM environment
-- The Neo4j export provided issues during import as JSON, therefore the database was exported/imported using Cypher format for
-compatibility and reliability during testing.
-- MySQL and Neo4j must both be running before launching the app
-- The networking feature requires a minimum level of connectivity in the Neo4j graph to return meaningful results
+- Designed and tested primarily in GitHub Codespaces and the ATU development environment
+- MySQL and Neo4j must both be running before launching the application or executing the test suite
+- The Neo4j export initially produced compatibility issues during JSON import, therefore the graph database was exported/imported using Cypher format for improved reliability during testing
+- The networking feature requires a minimum level of graph connectivity to produce meaningful recommendation results
+
+```
