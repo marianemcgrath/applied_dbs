@@ -19,17 +19,17 @@ _rooms_cache = None
  
 def view_speakers_and_sessions():
     search = input("Enter speaker name : ")
- 
+
     if not search.strip():
         print("*** ERROR *** Please enter a speaker name")
         return
- 
+
     print(f"Session Details For : {search}")
     print("--------------------------------------------")
- 
+
     conn = get_connection()
     cursor = conn.cursor()
- 
+
     query = """
         SELECT s.speakerName, s.sessionTitle, r.roomName
         FROM session s
@@ -38,10 +38,25 @@ def view_speakers_and_sessions():
     """
     cursor.execute(query, (f"%{search}%",))
     rows = cursor.fetchall()
- 
+
     if rows:
+        print(f"{'Speaker Name':<20} | {'Session Title':<35} | {'Room Name'}")
+        print("-" * 75)
         for row in rows:
             print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
+            # Order: SpeakerName | SessionTitle | RoomName
+    else:
+        print("No speakers match search string")
+
+    conn.close()
+ 
+    if rows:
+        # Adding header row
+        print(f"{'Speaker Name':<20} | {'Session Title':<35} | {'Room Name'}")
+        print("-" * 75)
+    
+    for row in rows:
+        print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
     else:
         print("No speakers match search string")
  
@@ -51,27 +66,29 @@ def view_speakers_and_sessions():
 def view_attendees_by_company():
     while True:
         company_id = input("Enter Company ID : ")
- 
+
         if not company_id.isdigit() or int(company_id) <= 0:
             print("*** ERROR *** Invalid Company ID")
             continue
- 
+
         company_id = int(company_id)
         conn = get_connection()
         cursor = conn.cursor()
- 
+
         cursor.execute("SELECT companyName FROM company WHERE companyID = %s", (company_id,))
         company = cursor.fetchone()
- 
+
         if not company:
             print(f"Company with ID {company_id} doesn't exist")
             conn.close()
             continue
- 
+
         company_name = company[0]
         print(f"{company_name} Attendees")
+        print(f"{'Attendee':<20} | {'DOB':<12} | {'Speaker':<20} | {'Session':<35} | {'Date':<12} | {'Room'}")
+        # Order: AttendeeName | AttendeeDOB | SpeakerName | SessionTitle | SessionDate | RoomName
         print("-" * 130)
- 
+
         query = """
             SELECT a.attendeeName, a.attendeeDOB, s.speakerName,
                    s.sessionTitle, s.sessionDate, r.roomName
@@ -83,14 +100,14 @@ def view_attendees_by_company():
         """
         cursor.execute(query, (company_id,))
         rows = cursor.fetchall()
- 
+
         if not rows:
             print(f"No attendees found for {company_name}")
         else:
             for row in rows:
-                print(f"{row[0]:<20} | {row[1]} | {row[2]:<20} | {row[3]:<35} | {row[4]} | {row[5]}")
-                # Order: AttendeeName | DOB | SpeakerName | SessionTitle | SessionDate | RoomName
- 
+                print(f"{row[0]:<20} | {row[1]:<12} | {row[2]:<20} | {row[3]:<35} | {row[4]:<12} | {row[5]}")
+                # Order: AttendeeName | AttendeeDOB | SpeakerName | SessionTitle | SessionDate | RoomName
+
         conn.close()
         break
  
