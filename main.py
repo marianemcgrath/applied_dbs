@@ -38,17 +38,6 @@ def view_speakers_and_sessions():
     """
     cursor.execute(query, (f"%{search}%",))
     rows = cursor.fetchall()
-
-    if rows:
-        print(f"{'Speaker Name':<20} | {'Session Title':<35} | {'Room Name'}")
-        print("-" * 75)
-        for row in rows:
-            print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
-            # Order: SpeakerName | SessionTitle | RoomName
-    else:
-        print("No speakers match search string")
-
-    conn.close()
  
     if rows:
         # Adding header row
@@ -101,12 +90,12 @@ def view_attendees_by_company():
         cursor.execute(query, (company_id,))
         rows = cursor.fetchall()
 
-        if not rows:
-            print(f"No attendees found for {company_name}")
-        else:
-            for row in rows:
-                print(f"{row[0]:<20} | {row[1]:<12} | {row[2]:<20} | {row[3]:<35} | {row[4]:<12} | {row[5]}")
-                # Order: AttendeeName | AttendeeDOB | SpeakerName | SessionTitle | SessionDate | RoomName
+# Replace the print loop (lines ~95-100) with:
+        for row in rows:
+            # Format dates
+            dob_out = row[1].strftime("%Y-%m-%d") if hasattr(row[1], 'strftime') else row[1]
+            date_out = row[4].strftime("%Y-%m-%d") if hasattr(row[4], 'strftime') else row[4]
+            print(f"{row[0]:<20} | {dob_out:<12} | {row[2]:<20} | {row[3]:<35} | {date_out:<12} | {row[5]}")
 
         conn.close()
         break
