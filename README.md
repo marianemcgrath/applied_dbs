@@ -77,12 +77,6 @@ A broader view of the attendee connection graph showing the network structure ac
 
 ![Neo4j Browser: MATCH (a:Attendee)-[r:CONNECTED_TO]-(b:Attendee) RETURN a, r, b LIMIT 20. Distributed network of green Attendee nodes with CONNECTED_TO edges.](images/attendee_connections.png)
 
-### Neo4j graph — 1 to 4 degree traversal from attendee 106
-
-All connections reachable from attendee 106 within 1–4 degrees, showing the full extent of their network before filtering.
-
-![Neo4j Browser: MATCH p = (u:Attendee {AttendeeID: 106})-[:CONNECTED_TO*1..4]-(c) RETURN p. Graph shows attendee 106 connected through nodes 120, 103, 104, 111, 101, 109, 107, and 114.](images/attendee_connections_1to4.png)
-
 ### Neo4j graph — 2 to 4 degree traversal (the suggest_connections query)
 
 This is the core query behind `suggest_connections()` in `dao.py`. Starting from attendee 106, it finds nodes reachable at 2–4 degrees while excluding existing direct connections — returning only new, relevant suggestions.
@@ -93,9 +87,6 @@ This is the core query behind `suggest_connections()` in `dao.py`. Starting from
 
 Relationship traversal across multiple degrees of separation is a natural use case for graph databases. Implementing the same functionality in MySQL would require significantly more complex recursive joins, whereas Neo4j handles this efficiently through native graph traversal.
 
-### Option 7 flow
-
-![Flowchart showing how option 7 calls suggest_connections() and key_connectors() in sequence. suggest_connections() validates the attendee ID in MySQL, traverses Neo4j for 2–4 degree paths ranked by mutual connections, then enriches results with MySQL name and company data before displaying a ranked table.](images/option7_networking.png)
 ---
 
 ## Usage
@@ -154,14 +145,14 @@ This project requires:
 
 ---
 
-## SetUp
+## Setup
 
 1. Import `appdbproj.sql` into MySQL
 2. Import `appdbprojNeo4j.cypher` into Neo4j
 3. Configure the `.env` file using `.env.example`
 4. Ensure both MySQL and Neo4j services are running before launching the application
 
-The application depends on both databases:
+This application depends on both databases:
 
 - **MySQL** stores structured conference data
 - **Neo4j** stores attendee relationship data used for networking analysis
@@ -181,9 +172,6 @@ python main.py
 ```
 ---
 
-## Project Structure
-
-```
 ## Project Structure
 
 ```text
@@ -208,7 +196,6 @@ python main.py
    ├── 2_to_4_degree_traversal_connections.png
    ├── ui_mockup.png
    └── data_flow_connections.png
-
 ```
 ---
 
