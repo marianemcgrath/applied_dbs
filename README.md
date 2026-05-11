@@ -149,8 +149,12 @@ This project requires:
 - Neo4j Database
 
 ```
----
 
+**Note:** Neo4j database is provided as .cypher format to ensure compatibility with current Neo4j versions 
+— drag and drop into Neo4j Browser to import.
+
+---
+```
 ## SetUp
 
 1. Import `appdbproj.sql` into MySQL
@@ -204,7 +208,9 @@ python main.py
 
 ## Testing
 
-The project was tested manually and through an automated Python test script (`test_runner.py`).
+The project was tested manually and through an automated Python test script.
+
+
 
 ### Manual Testing
 
