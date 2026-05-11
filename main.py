@@ -24,9 +24,6 @@ def view_speakers_and_sessions():
         print("*** ERROR *** Please enter a speaker name")
         return
 
-    print(f"Session Details For : {search}")
-    print("--------------------------------------------")
-
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -36,10 +33,16 @@ def view_speakers_and_sessions():
         JOIN room r ON s.roomID = r.roomID
         WHERE s.speakerName LIKE %s
     """
+
     cursor.execute(query, (f"%{search}%",))
     rows = cursor.fetchall()
 
     if rows:
+        print(f"\nSession Details For : {search}")
+        print("-" * 85)
+        print(f"{'Speaker':<20} | {'Session Title':<35} | Room")
+        print("-" * 85)
+
         for row in rows:
             print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
             # Output: Speaker Name | Session Title | Room Name
@@ -58,50 +61,78 @@ def view_attendees_by_company():
             continue
 
         company_id = int(company_id)
+
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT companyName FROM company WHERE companyID = %s", (company_id,))
+        cursor.execute(
+            "SELECT companyName FROM company WHERE companyID = %s",
+            (company_id,)
+        )
+
         company = cursor.fetchone()
 
         if not company:
-            print(f"Company with ID  {company_id}  doesn't exist")
+            print(f"Company with ID {company_id} doesn't exist")
             conn.close()
             continue
 
         company_name = company[0]
 
         query = """
-            SELECT a.attendeeName, a.attendeeDOB, s.sessionTitle, s.speakerName,
-                   s.sessionDate, r.roomName
+            SELECT a.attendeeName, a.attendeeDOB, s.sessionTitle,
+                   s.speakerName, s.sessionDate, r.roomName
             FROM attendee a
             JOIN registration reg ON a.attendeeID = reg.attendeeID
             JOIN session s ON reg.sessionID = s.sessionID
             JOIN room r ON s.roomID = r.roomID
             WHERE a.attendeeCompanyID = %s
         """
+
         cursor.execute(query, (company_id,))
         rows = cursor.fetchall()
 
-        # FIX: was break after empty result — now loops back for another attempt
         if not rows:
-            print(f"{company_name}  Attendees")
-            print(f"No attendees found for  {company_name}")
+            print(f"{company_name} Attendees")
+            print(f"No attendees found for {company_name}")
             conn.close()
             continue
 
-        print(f"{company_name}  Attendees")
+        print(f"\n{company_name} Attendees")
+        print("-" * 125)
+
+        print(
+            f"{'Name':<20} | {'DOB':<12} | {'Session Title':<35} | "
+            f"{'Speaker':<20} | {'Date':<12} | Room"
+        )
+
+        print("-" * 125)
+
         for row in rows:
-            dob_out = row[1].strftime("%Y-%m-%d") if hasattr(row[1], 'strftime') else row[1]
-            date_out = row[4].strftime("%Y-%m-%d") if hasattr(row[4], 'strftime') else row[4]
-            print(f"{row[0]:<20} | {dob_out:<12} | {row[2]:<35} | {row[3]:<20} | {date_out:<12} | {row[5]}")
-            # Output: Attendee Name | DOB | Session Title | Speaker Name | Session Date  | Room Name
+
+            dob_out = (
+                row[1].strftime("%Y-%m-%d")
+                if hasattr(row[1], 'strftime')
+                else row[1]
+            )
+
+            date_out = (
+                row[4].strftime("%Y-%m-%d")
+                if hasattr(row[4], 'strftime')
+                else row[4]
+            )
+
+            print(
+                f"{row[0]:<20} | {dob_out:<12} | {row[2]:<35} | "
+                f"{row[3]:<20} | {date_out:<12} | {row[5]}"
+            )
 
         conn.close()
         break
 
 
 def add_new_attendee():
+
     print("\nAdd New Attendee")
     print("----------------")
 
@@ -116,7 +147,11 @@ def add_new_attendee():
     cursor = conn.cursor()
 
     # Duplicate check immediately after ID is read
-    cursor.execute("SELECT attendeeID FROM attendee WHERE attendeeID = %s", (attendee_id,))
+    cursor.execute(
+        "SELECT attendeeID FROM attendee WHERE attendeeID = %s",
+        (attendee_id,)
+    )
+
     if cursor.fetchone():
         print(f"*** ERROR *** Attendee ID: {attendee_id} already exists")
         conn.close()
@@ -130,10 +165,13 @@ def add_new_attendee():
 
     # Validate DOB format and range
     min_date = datetime(1900, 1, 1)
+
     try:
         dob_date = datetime.strptime(dob, "%Y-%m-%d")
+
         if dob_date < min_date or dob_date > datetime.now():
             raise ValueError
+
     except ValueError:
         print("*** ERROR *** Invalid DOB")
         conn.close()
@@ -145,7 +183,11 @@ def add_new_attendee():
         conn.close()
         return
 
-    cursor.execute("SELECT companyID FROM company WHERE companyID = %s", (company_id,))
+    cursor.execute(
+        "SELECT companyID FROM company WHERE companyID = %s",
+        (company_id,)
+    )
+
     if not cursor.fetchone():
         print(f"*** ERROR *** Company ID: {company_id} does not exist")
         conn.close()
@@ -153,12 +195,20 @@ def add_new_attendee():
 
     try:
         query = """
-            INSERT INTO attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
+            INSERT INTO attendee
+            (attendeeID, attendeeName, attendeeDOB,
+             attendeeGender, attendeeCompanyID)
             VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (attendee_id, name, dob, gender, company_id))
+
+        cursor.execute(
+            query,
+            (attendee_id, name, dob, gender, company_id)
+        )
+
         conn.commit()
         print("Attendee successfully added")
+
     except Exception as e:
         print(f"*** ERROR *** {e}")
 
@@ -166,7 +216,9 @@ def add_new_attendee():
 
 
 def view_connected_attendees():
+
     while True:
+
         attendee_input = input("Enter Attendee ID : ")
 
         if not attendee_input.isdigit():
@@ -177,7 +229,12 @@ def view_connected_attendees():
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (attendee_id,))
+
+        cursor.execute(
+            "SELECT attendeeName FROM attendee WHERE attendeeID = %s",
+            (attendee_id,)
+        )
+
         mysql_row = cursor.fetchone()
         conn.close()
 
@@ -186,40 +243,61 @@ def view_connected_attendees():
             continue
 
         attendee_name = mysql_row[0]
-        print(f"Attendee Name:  {attendee_name}")
-        print("--------------------")
+
+        print(f"Attendee Name: {attendee_name}")
+        print("-" * 35)
 
         driver = get_neo4j_driver()
+
         with driver.session() as session:
+
             node_check = session.run(
                 "MATCH (a:Attendee {AttendeeID: $id}) RETURN a",
                 id=attendee_id
             )
+
             node_exists = node_check.single() is not None
 
             if not node_exists:
                 print("No connections")
+
             else:
                 result = session.run(
                     """
-                    MATCH (a:Attendee {AttendeeID: $id})-[:CONNECTED_TO]-(b:Attendee)
+                    MATCH (a:Attendee {AttendeeID: $id})
+                    -[:CONNECTED_TO]-(b:Attendee)
                     RETURN b.AttendeeID AS connectedID
                     """,
                     id=attendee_id
                 )
-                connected_ids = [record["connectedID"] for record in result]
+
+                connected_ids = [
+                    record["connectedID"] for record in result
+                ]
 
                 if not connected_ids:
                     print("No connections")
+
                 else:
                     print("These attendees are connected:")
+                    print(f"{'AttendeeID':<12} | Name")
+                    print("-" * 35)
+
                     conn = get_connection()
                     cursor = conn.cursor()
+
                     for cid in connected_ids:
-                        cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (cid,))
+
+                        cursor.execute(
+                            "SELECT attendeeName FROM attendee WHERE attendeeID = %s",
+                            (cid,)
+                        )
+
                         row = cursor.fetchone()
                         name = row[0] if row else "Unknown"
-                        print(f"{cid}  |  {name}")
+
+                        print(f"{cid:<12} | {name}")
+
                     conn.close()
 
         driver.close()
@@ -227,7 +305,9 @@ def view_connected_attendees():
 
 
 def add_attendee_connection():
+
     while True:
+
         id1_input = input("Enter Attendee 1 ID : ")
         id2_input = input("Enter Attendee 2 ID : ")
 
@@ -244,7 +324,12 @@ def add_attendee_connection():
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT attendeeID FROM attendee WHERE attendeeID IN (%s, %s)", (id1, id2))
+
+        cursor.execute(
+            "SELECT attendeeID FROM attendee WHERE attendeeID IN (%s, %s)",
+            (id1, id2)
+        )
+
         found = [row[0] for row in cursor.fetchall()]
         conn.close()
 
@@ -253,14 +338,20 @@ def add_attendee_connection():
             continue
 
         driver = get_neo4j_driver()
+
         with driver.session() as session:
+
             result = session.run(
                 """
-                MATCH (a:Attendee {AttendeeID: $id1})-[:CONNECTED_TO]-(b:Attendee {AttendeeID: $id2})
+                MATCH (a:Attendee {AttendeeID: $id1})
+                -[:CONNECTED_TO]-
+                (b:Attendee {AttendeeID: $id2})
                 RETURN count(*) AS cnt
                 """,
-                id1=id1, id2=id2
+                id1=id1,
+                id2=id2
             )
+
             already_connected = result.single()["cnt"] > 0
 
             if already_connected:
@@ -275,21 +366,34 @@ def add_attendee_connection():
                 MERGE (b:Attendee {AttendeeID: $id2})
                 MERGE (a)-[:CONNECTED_TO]-(b)
                 """,
-                id1=id1, id2=id2
+                id1=id1,
+                id2=id2
             )
 
         driver.close()
-        print(f"Attendee {id1} is now connected to Attendee {id2}")
+
+        print(
+            f"Attendee {id1} is now connected to "
+            f"Attendee {id2}"
+        )
+
         break
 
 
 def view_rooms():
+
     global _rooms_cache
 
     if _rooms_cache is None:
+
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT roomID, roomName, capacity FROM room ORDER BY roomID")
+
+        cursor.execute(
+            "SELECT roomID, roomName, capacity "
+            "FROM room ORDER BY roomID"
+        )
+
         _rooms_cache = cursor.fetchall()
         conn.close()
 
@@ -300,12 +404,17 @@ def view_rooms():
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
         # Output: RoomID | RoomName | Capacity
 
+
 def main():
+
     while True:
+
         print("\nConference Management")
         print("--------------------")
+
         print("\nMENU")
         print("====")
+
         print("1 - View Speakers & Sessions")
         print("2 - View Attendees by Company")
         print("3 - Add New Attendee")
@@ -319,25 +428,32 @@ def main():
 
         if choice == "1":
             view_speakers_and_sessions()
+
         elif choice == "2":
             view_attendees_by_company()
+
         elif choice == "3":
             add_new_attendee()
+
         elif choice == "4":
             view_connected_attendees()
+
         elif choice == "5":
             add_attendee_connection()
+
         elif choice == "6":
             view_rooms()
+
         elif choice == "7":
             suggest_connections()
             key_connectors()
+
         elif choice == "x":
             print("Goodbye!")
             break
+
         else:
             print("*** ERROR *** Invalid choice")
-
 
 
 if __name__ == "__main__":
