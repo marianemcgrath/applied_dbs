@@ -184,15 +184,31 @@ python main.py
 ## Project Structure
 
 ```
-├── main.py                 # Menu-driven application entry point
-├── dao.py                  # All database logic (DAO pattern)
-├── db_connection.py        # MySQL connection helper
-├── neo4j_connection.py     # Neo4j connection helper
-├── requirements.txt        # Python dependencies
-├── GitLink.txt             # Link to GitHub repository
-├── innovation.pdf          # Innovation documentation
-├── appdbproj.sql           # MySQL database dump
-└── appdbprojNeo4j.cypher   # Neo4j database dump
+## Project Structure
+
+```text
+├── main.py
+├── dao.py
+├── db_connection.py
+├── neo4j_connection.py
+├── requirements.txt
+├── .env.example
+├── GitLink.txt
+├── innovation.pdf
+├── README.md
+├── appdbproj.sql
+├── appdbprojNeo4j.cypher
+├── images/
+   ├── system_architecture.png
+   ├── database_schema.png
+   ├── option7_networking.png
+   ├── neo4j_graph_model.png
+   ├── attendee_connections.png
+   ├── attendee_connections_1to4.png
+   ├── 2_to_4_degree_traversal_connections.png
+   ├── ui_mockup.png
+   └── data_flow_connections.png
+
 ```
 ---
 
