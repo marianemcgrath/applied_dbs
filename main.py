@@ -39,10 +39,10 @@ def view_speakers_and_sessions():
     cursor.execute(query, (f"%{search}%",))
     rows = cursor.fetchall()
 
-    # FIX: was for...else which always printed "No speakers" even with results
     if rows:
         for row in rows:
             print(f"{row[0]:<20} | {row[1]:<35} | {row[2]}")
+            # Output: Speaker Name | Session Title | Room Name
     else:
         print("No speakers found of that name")
 
@@ -95,6 +95,7 @@ def view_attendees_by_company():
             dob_out = row[1].strftime("%Y-%m-%d") if hasattr(row[1], 'strftime') else row[1]
             date_out = row[4].strftime("%Y-%m-%d") if hasattr(row[4], 'strftime') else row[4]
             print(f"{row[0]:<20} | {dob_out:<12} | {row[2]:<35} | {row[3]:<20} | {date_out:<12} | {row[5]}")
+            # Output: Attendee Name | DOB | Session Title | Speaker Name | Session Date  | Room Name
 
         conn.close()
         break
@@ -297,7 +298,7 @@ def view_rooms():
 
     for row in _rooms_cache:
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
-
+        # Output: RoomID | RoomName | Capacity
 
 def main():
     while True:
@@ -334,6 +335,9 @@ def main():
         elif choice == "x":
             print("Goodbye!")
             break
+        else:
+            print("*** ERROR *** Invalid choice")
+
 
 
 if __name__ == "__main__":

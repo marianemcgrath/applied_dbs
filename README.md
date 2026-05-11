@@ -121,17 +121,18 @@ Option 4 is a good example of the two-database pattern used throughout the syste
 - Neo4j (`neo4j` driver)
 - `python-dotenv` for environment variables
 
-```bash
-.env.example
+### Example `.env`
 
-DB_HOST=localhost
+```env
+DB_HOST=127.0.0.1
 DB_USER=root
-DB_PASSWORD=password
+DB_PASSWORD=
 DB_NAME=appdbproj
+DB_PORT=3306
 
-NEO4J_URI=neo4j+s://80769af1.databases.neo4j.io
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=password
+NEO4J_URI=your_neo4j_uri
+NEO4J_USER=your_neo4j_username
+NEO4J_PASSWORD=your_neo4j_password
 ```
 ---
 
@@ -148,13 +149,11 @@ This project requires:
 - MySQL Server
 - Neo4j Database
 
-```
-
 **Note:** Neo4j database is provided as .cypher format to ensure compatibility with current Neo4j versions 
 — drag and drop into Neo4j Browser to import.
 
 ---
-```
+
 ## SetUp
 
 1. Import `appdbproj.sql` into MySQL
@@ -191,7 +190,7 @@ python main.py
 ├── neo4j_connection.py     # Neo4j connection helper
 ├── requirements.txt        # Python dependencies
 ├── GitLink.txt             # Link to GitHub repository
-├── innovationfeature.pdf   # Innovation documentation
+├── innovation.pdf          # Innovation documentation
 ├── appdbproj.sql           # MySQL database dump
 └── appdbprojNeo4j.cypher   # Neo4j database dump
 ```
@@ -206,46 +205,15 @@ python main.py
 - **Manager-only access** — the system is designed for event organisers, not attendees.
 ---
 
-## Testing
+### Testing
 
-The project was tested manually and through an automated Python test script.
+All menu options were tested manually and scripts were created to test connection as well as to simulate user interaction with the 
+application using Python.
 
+All automated tests passed successfully after final integration testing.
 
+![Automated Python test script](/images/system_testing.png)
 
-### Manual Testing
-
-All menu options were tested individually within the ATU VM / GitHub Codespaces environment, including:
-
-- Input validation
-- Invalid IDs
-- Duplicate attendee handling
-- Neo4j connection traversal
-- MySQL data retrieval
-- Networking recommendations
-- Connection creation
-- Room caching functionality
-
-### Automated Testing
-
-The `test_runner.py` script simulates user interaction with the menu-driven application using Python's `subprocess` module.
-
-The script validates:
-
-- Speaker/session lookup
-- Company attendee lookup
-- Attendee insertion
-- Duplicate prevention
-- Gender validation
-- Neo4j attendee connections
-- Relationship creation
-- Room display
-- Networking insights functionality
-
-Example execution:
-
-```bash
-python test_runner.py
-```
 ---
 
 ## Notes
@@ -254,5 +222,3 @@ python test_runner.py
 - MySQL and Neo4j must both be running before launching the application or executing the test suite
 - The Neo4j export initially produced compatibility issues during JSON import, therefore the graph database was exported/imported using Cypher format for improved reliability during testing
 - The networking feature requires a minimum level of graph connectivity to produce meaningful recommendation results
-
-```
